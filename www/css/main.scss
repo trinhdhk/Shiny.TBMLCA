@@ -40,6 +40,10 @@ input[type='text']{
 .theme-dark{
   .ms-Toggle-background{
     background-color: #000;
+    border-color: #a8a8a8;
+    &:hover .ms-Toggle-thumb {
+      background-color: rgb(102, 101, 100);
+    }
   }
   .ms-Label {
     color: var(--f7-block-title-text-color);
