@@ -78,29 +78,29 @@ server = function(input, output, session) {
       )
       shinyjs::js$sendBackFirstTab()
     } else {
-      colnames(theta) = "Chance of positive"
+      colnames(theta) = "Probability"
       predicts$theta = theta
       colnames(bacillary) = "Bacillary Burden"
       predicts$bacillary = bacillary
-      colnames(p_Smear) <- colnames(p_Mgit) <- colnames(p_Xpert) <- 'Chance of positive'
+      colnames(p_Smear) <- colnames(p_Mgit) <- colnames(p_Xpert) <- 'Probability'
       predicts$p_Smear = p_Smear
       predicts$p_Mgit = p_Mgit
       predicts$p_Xpert = p_Xpert
       
-      plot_text <- function(x, fn=plogis){
+      plot_text <- function(x, fn=plogis, what){
         mean = fn(mean(x))
         lower.ci = fn(quantile(x, .025))
         upper.ci = fn(quantile(x, .975))
         renderUI(
           HTML(glue::glue('
-          Estimated probability of having TBM (coloured vertical line) is: 
+          Estimated ${what} (coloured vertical line) is: 
           {strong(format(mean,digits=3))},
           with 95% Credible Interval (solid area) is 
           [{strong(format(lower.ci, digits=3))}, {strong(format(upper.ci, digits=3))}]')
           ))
       }
       # Theta ----
-      output$theta_text = plot_text(theta)
+      output$theta_text = plot_text(theta, of = 'probability of having TBM')
       output$theta_areasPlot = renderPlot(
         bayesplot::mcmc_areas(theta, prob = .95, prob_outer = .995,  point_est = 'mean') + 
           scale_x_continuous(breaks=qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)),
@@ -108,26 +108,26 @@ server = function(input, output, session) {
       )
       
       # RE
-      output$re_text = plot_text(bacillary, fn = c)
+      output$re_text = plot_text(bacillary, fn = c, of = 'bacillary burden')
       output$re_areasPlot = renderPlot(
         bayesplot::mcmc_areas(bacillary, prob=.95,  prob_outer = .995, point_est = 'mean')
       )
       
       output$test_text = renderText("Below plots show estimation of each confimation test's chance of positive.")
       # Tests
-      output$smear_text = plot_text(p_Smear)
+      output$smear_text = plot_text(p_Smear, of = 'probability of positive Smear')
       output$smear_areasPlot = renderPlot(
         bayesplot::mcmc_areas(p_Smear, prob=.95, prob_outer = .995, point_est = 'mean') + 
           scale_x_continuous(breaks=qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)),
                              labels = c('.0001',.001,.01, seq(.1,.9,.2),.99))
       )
-      output$mgit_text = plot_text(p_Mgit)
+      output$mgit_text = plot_text(p_Mgit, of = 'probability of positive Mgit')
       output$mgit_areasPlot = renderPlot(
         bayesplot::mcmc_areas(p_Mgit, prob=.95, prob_outer = .995, point_est = 'mean') + 
           scale_x_continuous(breaks=qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)),
                              labels = c('.0001',.001,.01, seq(.1,.9,.2),.99))
       )
-      output$xpert_text = plot_text(p_Xpert)
+      output$xpert_text = plot_text(p_Xpert, of = 'probability of positive GeneXpert')
       output$xpert_areasPlot = renderPlot(
         bayesplot::mcmc_areas(p_Xpert, prob=.95, prob_outer = .995, point_est = 'mean') + 
           scale_x_continuous(breaks=qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)),
