@@ -24,7 +24,9 @@ div[data-value='Diagnosis']{
 }
 }
 
-
+.toast.toast-center.toast-with-icon.modal-in{
+  min-width: 300px;
+}
 .toast-button.button{
   size: 9px;
 }
