@@ -14,7 +14,7 @@ server = function(input, output, session) {
     bayesplot::bayesplot_theme_set(plot_theme())
     
     # bayesplot::bayesplot_theme_update(
-      # )
+    # )
     if (input$color_scheme=='dark') {
       bayesplot::color_scheme_set("pink")
       bayesplot::bayesplot_theme_update(
@@ -69,7 +69,7 @@ server = function(input, output, session) {
     p_Smear = as.matrix(plogis(params()$z_Smear[,1])*(1-theta) + plogis(params()$z_Smear[,2])*theta)
     p_Mgit= as.matrix(plogis(params()$z_Mgit[,1])*(1-theta) + plogis(params()$z_Mgit[,2])*theta)
     p_Xpert = as.matrix(plogis(params()$z_Xpert[,1])*(1-theta) + plogis(params()$z_Xpert[,2])*theta)
-      # browser()
+    # browser()
     if (any(is.na(theta))){
       shinyWidgets::sendSweetAlert(
         session, 
@@ -79,38 +79,53 @@ server = function(input, output, session) {
       )
       shinyjs::js$sendBackFirstTab()
     } else {
-      colnames(theta) = "Positive Probability"
+      colnames(theta) = "Chance of positive"
       predicts$theta = theta
       colnames(bacillary) = "Bacillary Burden"
       predicts$bacillary = bacillary
-      colnames(p_Smear) <- colnames(p_Mgit) <- colnames(p_Xpert) <- 'Positive'
+      colnames(p_Smear) <- colnames(p_Mgit) <- colnames(p_Xpert) <- 'Chance of positive'
       predicts$p_Smear = p_Smear
       predicts$p_Mgit = p_Mgit
       predicts$p_Xpert = p_Xpert
       
-      # output$theta_areasplot = renderPlot(hist(cars$speed))
+      plot_text <- function(x){
+        renderUI(
+          HTML(glue::glue('
+          Estimated probability of having TBM (coloured vertical line) is: 
+          {strong(format(plogis(mean(x)),digits=3))},
+          with 95% Credible Interval (solid area) is 
+          [{strong(format(plogis(quantile(x, .025)), digits=3))}, {strong(format(plogis(quantile(x, .975)), digits=3))}]')
+          ))
+      }
+      # Theta ----
+      output$theta_text = plot_text(theta)
       output$theta_areasPlot = renderPlot(
         bayesplot::mcmc_areas(theta, prob = .95, prob_outer = .999,  point_est = 'mean') + 
           scale_x_continuous(breaks=qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)),
                              labels = c('.0001',.001,.01, seq(.1,.9,.2),.99))
-        )
+      )
       
+      # RE
+      output$re_text = plot_text(bacillary)
       output$re_areasPlot = renderPlot(
         bayesplot::mcmc_areas(bacillary, prob=.95,  prob_outer = .999, point_est = 'mean')
       )
       
+      output$test_text = renderText("Below plots show estimation of each confimation test's chance of positive.")
+      # Tests
+      output$smear_text = plot_text(p_Smear)
       output$smear_areasPlot = renderPlot(
         bayesplot::mcmc_areas(p_Smear, prob=.95, prob_outer = .999, point_est = 'mean') + 
           scale_x_continuous(breaks=qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)),
                              labels = c('.0001',.001,.01, seq(.1,.9,.2),.99))
       )
-      
+      output$mgit_text = plot_text(p_Mgit)
       output$mgit_areasPlot = renderPlot(
         bayesplot::mcmc_areas(p_Mgit, prob=.95, prob_outer = .999, point_est = 'mean') + 
           scale_x_continuous(breaks=qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)),
                              labels = c('.0001',.001,.01, seq(.1,.9,.2),.99))
       )
-      
+      output$xpert_text = plot_text(p_Xpert)
       output$xpert_areasPlot = renderPlot(
         bayesplot::mcmc_areas(p_Xpert, prob=.95, prob_outer = .999, point_est = 'mean') + 
           scale_x_continuous(breaks=qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)),
@@ -119,8 +134,8 @@ server = function(input, output, session) {
       
       output$tests_areasPlot = renderPlot(
         bayesplot::mcmc_areas(p_Smear, prob=.95, prob_outer = .999, point_est = 'mean') + ggtitle('Smear') +
-        bayesplot::mcmc_areas(p_Mgit, prob=.95, point_est = 'mean') + ggtitle('Mgit') + 
-        bayesplot::mcmc_areas(p_Xpert, prob=.95, point_est = 'mean') + ggtitle('Xpert')
+          bayesplot::mcmc_areas(p_Mgit, prob=.95, point_est = 'mean') + ggtitle('Mgit') + 
+          bayesplot::mcmc_areas(p_Xpert, prob=.95, point_est = 'mean') + ggtitle('Xpert')
       )
     }
   })

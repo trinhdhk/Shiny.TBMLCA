@@ -19,7 +19,7 @@ fluentNumericInput = function(inputId, ...){
 ui <- f7Page(
   shinyjs::useShinyjs(),
   shinyjs::extendShinyjs(
-  text = "
+    text = "
     shinyjs.sendBackFirstTab = () => $('.toolbar-inner > :first-child')[0].click();
   ", functions = c("sendBackFirstTab")),
   f7TabLayout(
@@ -46,18 +46,18 @@ ui <- f7Page(
                                placeholder = '(years)',
                                description = 'Patient\'s Age in years'),
             shiny.fluent::Toggle.shinyInput(inputId = 'hiv_status',
-                     label = 'HIV Positive'),
+                                            label = 'HIV Positive'),
             shiny.fluent::Toggle.shinyInput(inputId = 'clin_contact_tb',
-                     label = 'Past TB Contact')
+                                            label = 'Past TB Contact')
           ),
           f7Block(
             f7BlockTitle('Clinical Symptoms'),
             shiny.fluent::Toggle.shinyInput(inputId = 'clin_symptoms',
-                     label = 'General TB Syndrome'),
+                                            label = 'General TB Syndrome'),
             shiny.fluent::Toggle.shinyInput(inputId = 'clin_motor_palsy',
-                     label = 'Local neuro-deficit'),
+                                            label = 'Local neuro-deficit'),
             shiny.fluent::Toggle.shinyInput(inputId = 'clin_nerve_palsy',
-                     label = 'Cranial nerve palsy'),
+                                            label = 'Cranial nerve palsy'),
             fluentNumericInput(inputId = 'clin_gcs',
                                label = 'Glasgow Coma Score',
                                placeholder = '1-15'),
@@ -69,9 +69,9 @@ ui <- f7Page(
           f7Block(
             f7BlockTitle('X-Ray Signs'),
             shiny.fluent::Toggle.shinyInput(inputId = 'xray_pul_tb',
-                     label = 'Pulmonary non-miliary TB'),
+                                            label = 'Pulmonary non-miliary TB'),
             shiny.fluent::Toggle.shinyInput(inputId = 'xray_mil_tb',
-                     label = 'Miliary TB')
+                                            label = 'Miliary TB')
           ),
           f7Block(
             f7BlockTitle('Hematological Tests'),
@@ -126,7 +126,7 @@ ui <- f7Page(
           f7Block(shiny.fluent::PrimaryButton.shinyInput(inputId = 'submit', text = 'Run')),
           style = 'width:100px;'
         ),
-        div(style="clear:both"),
+        # div(style="clear:both"),
         
         tags$head(
           tags$style(sass::sass(sass::sass_file('www/css/main.scss'))),
@@ -138,7 +138,8 @@ ui <- f7Page(
           hover = TRUE,
           f7Card(
             title = "Chance of TBM",
-            plotOutput('theta_areasPlot')
+            uiOutput('theta_text'),
+            shinycssloaders::withSpinner(plotOutput('theta_areasPlot'))
           ),
         ),
         
@@ -147,7 +148,8 @@ ui <- f7Page(
           hover = TRUE,
           f7Card(
             title = "Average Bacillary Burden",
-            plotOutput('re_areasPlot')
+            uiOutput('re_text'),
+            shinycssloaders::withSpinner(plotOutput('re_areasPlot'))
           )
         ),
         
@@ -156,19 +158,23 @@ ui <- f7Page(
           hover = TRUE,
           f7Block(
             f7BlockHeader('Chances of postive confirmation tests'),
+            uiOutput('test_text'),
             f7Accordion(
               id = 'test_plots',
               multiCollapse = TRUE,
               f7AccordionItem(
-                plotOutput('smear_areasPlot'),
+                uiOutput('smear_text'),
+                shinycssloaders::withSpinner(plotOutput('smear_areasPlot')),
                 title = 'Smear'
               ),
               f7AccordionItem(
-                plotOutput('mgit_areasPlot'),
+                uiOutput('mgit_text'),
+                shinycssloaders::withSpinner(plotOutput('mgit_areasPlot')),
                 title = 'Mgit Culture'
               ),
               f7AccordionItem(
-                plotOutput('xpert_areasPlot'),
+                uiOutput('xpert_text'),
+                shinycssloaders::withSpinner(plotOutput('xpert_areasPlot')),
                 title = 'GeneXpert'
               ),
             )
