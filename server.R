@@ -108,7 +108,7 @@ server = function(input, output, session) {
       )
       
       # RE
-      output$re_text = plot_text(bacillary, fn = I)
+      output$re_text = plot_text(bacillary, fn = c)
       output$re_areasPlot = renderPlot(
         bayesplot::mcmc_areas(bacillary, prob=.95,  prob_outer = .995, point_est = 'mean')
       )
