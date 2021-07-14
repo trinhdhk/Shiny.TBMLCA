@@ -163,21 +163,21 @@ ui <- f7Page(
               id = 'test_plots',
               multiCollapse = TRUE,
               f7AccordionItem(
-                title = 'Smear'
+                title = 'Smear',
                 f7Block(
                   uiOutput('smear_text'),
                   shinycssloaders::withSpinner(plotOutput('smear_areasPlot')),
                 )
               ),
               f7AccordionItem(
-                title = 'Mgit Culture'
+                title = 'Mgit Culture',
                 f7Block(
                   uiOutput('mgit_text'),
                   shinycssloaders::withSpinner(plotOutput('mgit_areasPlot')),
                 )
               ),
               f7AccordionItem(
-                title = 'GeneXpert'
+                title = 'GeneXpert',
                 f7Block(
                   uiOutput('xpert_text'),
                   shinycssloaders::withSpinner(plotOutput('xpert_areasPlot')),

@@ -64,10 +64,10 @@ server = function(input, output, session) {
     bacillary = 
       as.matrix(params()$b_HIV) * X[1] +
       as.matrix(params()$b_cs) * X[2] + 
-      params()$b %*% X[c(12, 13, 16), drop=FALSE]
-    p_Smear = as.matrix(plogis(params()$z_Smear[,1])*(1-theta) + plogis(params()$z_Smear[,2])*theta)
-    p_Mgit= as.matrix(plogis(params()$z_Mgit[,1])*(1-theta) + plogis(params()$z_Mgit[,2])*theta)
-    p_Xpert = as.matrix(plogis(params()$z_Xpert[,1])*(1-theta) + plogis(params()$z_Xpert[,2])*theta)
+      params()$b %*% X[c(12, 13, 14, 16), drop=FALSE]
+    p_Smear = as.matrix(plogis(params()$z_Smear[,1])*(1-theta) + plogis(params()$z_Smear[,2] + params()$b_RE[,1] * bacillary)*theta)
+    p_Mgit= as.matrix(plogis(params()$z_Mgit[,1])*(1-theta) + plogis(params()$z_Mgit[,2] + params()$b_RE[,2] * bacillary)*theta)
+    p_Xpert = as.matrix(plogis(params()$z_Xpert[,1])*(1-theta) + plogis(params()$z_Xpert[,2] + params()$b_RE[,3] * bacillary)*theta)
     # browser()
     if (any(is.na(theta))){
       shinyWidgets::sendSweetAlert(
