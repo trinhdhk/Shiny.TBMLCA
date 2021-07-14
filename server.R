@@ -1,7 +1,6 @@
 library(shiny)
 library(ggplot2)
 library(thematic)
-# library(patchwork)
 ggplot2::theme_set(ggplot2::theme_bw())
 thematic_shiny()
 
@@ -88,52 +87,55 @@ server = function(input, output, session) {
       predicts$p_Mgit = p_Mgit
       predicts$p_Xpert = p_Xpert
       
-      plot_text <- function(x){
+      plot_text <- function(x, fn=plogis){
+        mean = fn(mean(x))
+        lower.ci = fn(quantile(x, .025))
+        upper.ci = fn(quantile(x, .975))
         renderUI(
           HTML(glue::glue('
           Estimated probability of having TBM (coloured vertical line) is: 
-          {strong(format(plogis(mean(x)),digits=3))},
+          {strong(format(mean,digits=3))},
           with 95% Credible Interval (solid area) is 
-          [{strong(format(plogis(quantile(x, .025)), digits=3))}, {strong(format(plogis(quantile(x, .975)), digits=3))}]')
+          [{strong(format(lower.ci, digits=3))}, {strong(format(upper.ci, digits=3))}]')
           ))
       }
       # Theta ----
       output$theta_text = plot_text(theta)
       output$theta_areasPlot = renderPlot(
-        bayesplot::mcmc_areas(theta, prob = .95, prob_outer = .999,  point_est = 'mean') + 
+        bayesplot::mcmc_areas(theta, prob = .95, prob_outer = .995,  point_est = 'mean') + 
           scale_x_continuous(breaks=qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)),
                              labels = c('.0001',.001,.01, seq(.1,.9,.2),.99))
       )
       
       # RE
-      output$re_text = plot_text(bacillary)
+      output$re_text = plot_text(bacillary, fn = I)
       output$re_areasPlot = renderPlot(
-        bayesplot::mcmc_areas(bacillary, prob=.95,  prob_outer = .999, point_est = 'mean')
+        bayesplot::mcmc_areas(bacillary, prob=.95,  prob_outer = .995, point_est = 'mean')
       )
       
       output$test_text = renderText("Below plots show estimation of each confimation test's chance of positive.")
       # Tests
       output$smear_text = plot_text(p_Smear)
       output$smear_areasPlot = renderPlot(
-        bayesplot::mcmc_areas(p_Smear, prob=.95, prob_outer = .999, point_est = 'mean') + 
+        bayesplot::mcmc_areas(p_Smear, prob=.95, prob_outer = .995, point_est = 'mean') + 
           scale_x_continuous(breaks=qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)),
                              labels = c('.0001',.001,.01, seq(.1,.9,.2),.99))
       )
       output$mgit_text = plot_text(p_Mgit)
       output$mgit_areasPlot = renderPlot(
-        bayesplot::mcmc_areas(p_Mgit, prob=.95, prob_outer = .999, point_est = 'mean') + 
+        bayesplot::mcmc_areas(p_Mgit, prob=.95, prob_outer = .995, point_est = 'mean') + 
           scale_x_continuous(breaks=qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)),
                              labels = c('.0001',.001,.01, seq(.1,.9,.2),.99))
       )
       output$xpert_text = plot_text(p_Xpert)
       output$xpert_areasPlot = renderPlot(
-        bayesplot::mcmc_areas(p_Xpert, prob=.95, prob_outer = .999, point_est = 'mean') + 
+        bayesplot::mcmc_areas(p_Xpert, prob=.95, prob_outer = .995, point_est = 'mean') + 
           scale_x_continuous(breaks=qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)),
                              labels = c('.0001',.001,.01, seq(.1,.9,.2),.99))
       )
       
       output$tests_areasPlot = renderPlot(
-        bayesplot::mcmc_areas(p_Smear, prob=.95, prob_outer = .999, point_est = 'mean') + ggtitle('Smear') +
+        bayesplot::mcmc_areas(p_Smear, prob=.95, prob_outer = .995, point_est = 'mean') + ggtitle('Smear') +
           bayesplot::mcmc_areas(p_Mgit, prob=.95, point_est = 'mean') + ggtitle('Mgit') + 
           bayesplot::mcmc_areas(p_Xpert, prob=.95, point_est = 'mean') + ggtitle('Xpert')
       )
