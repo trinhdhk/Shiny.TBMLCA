@@ -1,0 +1,62 @@
+*{
+  transition: all 0.1s;
+}
+.block-title{
+  font-weight: bold;
+}
+div[data-value='Information']{
+  .display-flex {
+  flex-wrap: wrap;
+  
+  & > * {
+    flex-basis: 30%;
+  }
+}
+}
+
+div[data-value='Diagnosis']{
+  .display-flex {
+  flex-wrap: wrap;
+  
+  & > * {
+    flex-basis: 50%;
+  }
+}
+}
+
+
+.toast-button.button{
+  size: 9px;
+}
+
+input[type='text']{
+    padding: 10px 20px 10px 10px;
+    border-width: 0 0 1px 0;
+    border-bottom-color: var(--f7-theme-color);
+}
+  
+.theme-dark{
+  .ms-Toggle-background{
+    background-color: #000;
+  }
+  .ms-Label {
+    color: var(--f7-block-title-text-color);
+  }
+  .ms-TextField{
+    label{
+      color: var(--f7-block-title-text-color);
+    }
+    input[type='text']{
+      background-color: #000;
+      ::placeholder{
+        color: var(--f7-color-gray);
+      }
+    }
+  }
+  .swal2-popup{
+    background-color: #171717; 
+    .swal2-content, .swal2-title{
+      color: var(--f7-block-title-text-color);
+    }
+  }
+}

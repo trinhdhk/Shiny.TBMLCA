@@ -1,0 +1,136 @@
+library(shiny)
+library(ggplot2)
+library(thematic)
+# library(patchwork)
+ggplot2::theme_set(ggplot2::theme_bw())
+thematic_shiny()
+
+server = function(input, output, session) {
+  # Color-scheme aware
+  observeEvent(input$color_scheme,{
+    file <- paste0('www/assets/oucru_', input$color_scheme)
+    output$oucru_logo <- renderUI(tags$img(src = paste('data:image/jpeg;base64,', readLines(file, warn=FALSE))))
+    plot_theme <- switch(input$color_scheme, light = theme_bw, dark = theme_dark)
+    bayesplot::bayesplot_theme_set(plot_theme())
+    
+    # bayesplot::bayesplot_theme_update(
+      # )
+    if (input$color_scheme=='dark') {
+      bayesplot::color_scheme_set("pink")
+      bayesplot::bayesplot_theme_update(
+        plot.background = element_rect(fill='transparent',color='transparent'),
+        panel.background = element_rect(fill = "transparent"),
+        axis.text = element_text(color = 'white',size = 15,family = 'sans'))
+    } else{
+      bayesplot::color_scheme_set("red")
+      bayesplot::bayesplot_theme_update(
+        plot.background = element_rect(fill='transparent',color='transparent'),
+        panel.background = element_rect(fill = "transparent"),
+        axis.text = element_text(color = 'black',size = 15,family = 'sans'))
+    }
+  })
+  
+  # Get model
+  params <- reactiveVal()
+  predicts <- reactiveValues()
+  observeEvent(input$submit, {
+    #TODO select model. now default
+    params(readRDS('fits/m8l00b458.RDS'))
+    tryCatch(
+      X <- rbind(
+        input$hiv_status,
+        input$clin_symptoms,
+        input$clin_motor_palsy,
+        input$clin_nerve_palsy,
+        input$clin_contact_tb,
+        input$xray_pul_tb,
+        input$xray_mil_tb,
+        input$crypto,
+        log2(as.numeric(input$age)) - 5.2632,
+        log2(as.numeric(input$clin_illness_day)),
+        log10(as.numeric(input$bld_glucose)) - .8233,
+        log10(as.numeric(input$csf_glucose)+1) - .5845,
+        log10(as.numeric(input$csf_lympho)+1) - 1.7791,
+        log10(as.numeric(input$csf_protein)) - .0160,
+        log10(as.numeric(input$csf_lactate)) - .6072,
+        log10(as.numeric(input$csf_neutro)+1) - 1.6306,
+        15 - as.numeric(input$clin_gcs),
+        log10(as.numeric(input$csf_eos)+1) - .0747,
+        log10(as.numeric(input$csf_rbc)+1) - 1.4402,
+        (log10(as.numeric(input$csf_neutro)+1) - 1.6306)^2
+      ),
+      error = function(err) shinyWidgets::sendSweetAlert(session, 'Error', text=err, type='error')
+    )
+    theta = params()$a %*% X + as.matrix(params()$a0)
+    bacillary = 
+      as.matrix(params()$b_HIV) * X[1] +
+      as.matrix(params()$b_cs) * X[2] + 
+      params()$b %*% X[c(12, 13, 16), drop=FALSE]
+    p_Smear = as.matrix(plogis(params()$z_Smear[,1])*(1-theta) + plogis(params()$z_Smear[,2])*theta)
+    p_Mgit= as.matrix(plogis(params()$z_Mgit[,1])*(1-theta) + plogis(params()$z_Mgit[,2])*theta)
+    p_Xpert = as.matrix(plogis(params()$z_Xpert[,1])*(1-theta) + plogis(params()$z_Xpert[,2])*theta)
+      # browser()
+    if (any(is.na(theta))){
+      shinyWidgets::sendSweetAlert(
+        session, 
+        "Error", 
+        text="Some predictors might be invalid.", 
+        type="error"
+      )
+      shinyjs::js$sendBackFirstTab()
+    } else {
+      colnames(theta) = "Positive Probability"
+      predicts$theta = theta
+      colnames(bacillary) = "Bacillary Burden"
+      predicts$bacillary = bacillary
+      colnames(p_Smear) <- colnames(p_Mgit) <- colnames(p_Xpert) <- 'Positive'
+      predicts$p_Smear = p_Smear
+      predicts$p_Mgit = p_Mgit
+      predicts$p_Xpert = p_Xpert
+      
+      # output$theta_areasplot = renderPlot(hist(cars$speed))
+      output$theta_areasPlot = renderPlot(
+        bayesplot::mcmc_areas(theta, prob = .95, prob_outer = .999,  point_est = 'mean') + 
+          scale_x_continuous(breaks=qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)),
+                             labels = c('.0001',.001,.01, seq(.1,.9,.2),.99))
+        )
+      
+      output$re_areasPlot = renderPlot(
+        bayesplot::mcmc_areas(bacillary, prob=.95,  prob_outer = .999, point_est = 'mean')
+      )
+      
+      output$smear_areasPlot = renderPlot(
+        bayesplot::mcmc_areas(p_Smear, prob=.95, prob_outer = .999, point_est = 'mean') + 
+          scale_x_continuous(breaks=qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)),
+                             labels = c('.0001',.001,.01, seq(.1,.9,.2),.99))
+      )
+      
+      output$mgit_areasPlot = renderPlot(
+        bayesplot::mcmc_areas(p_Mgit, prob=.95, prob_outer = .999, point_est = 'mean') + 
+          scale_x_continuous(breaks=qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)),
+                             labels = c('.0001',.001,.01, seq(.1,.9,.2),.99))
+      )
+      
+      output$xpert_areasPlot = renderPlot(
+        bayesplot::mcmc_areas(p_Xpert, prob=.95, prob_outer = .999, point_est = 'mean') + 
+          scale_x_continuous(breaks=qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)),
+                             labels = c('.0001',.001,.01, seq(.1,.9,.2),.99))
+      )
+      
+      output$tests_areasPlot = renderPlot(
+        bayesplot::mcmc_areas(p_Smear, prob=.95, prob_outer = .999, point_est = 'mean') + ggtitle('Smear') +
+        bayesplot::mcmc_areas(p_Mgit, prob=.95, point_est = 'mean') + ggtitle('Mgit') + 
+        bayesplot::mcmc_areas(p_Xpert, prob=.95, point_est = 'mean') + ggtitle('Xpert')
+      )
+    }
+  })
+  
+  # send the theme to javascript
+  observe({
+    session$sendCustomMessage(
+      type = "ui-tweak",
+      message = list(os = input$theme, skin = input$color)
+    )
+  })
+  
+}
