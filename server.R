@@ -60,14 +60,15 @@ server = function(input, output, session) {
       ),
       error = function(err) shinyWidgets::sendSweetAlert(session, 'Error', text=err, type='error')
     )
+    # browser()
     theta = params()$a %*% X + as.matrix(params()$a0)
     bacillary = 
       as.matrix(params()$b_HIV) * X[1] +
       as.matrix(params()$b_cs) * X[2] + 
       params()$b %*% X[c(12, 13, 14, 16), drop=FALSE]
-    p_Smear = as.matrix(plogis(params()$z_Smear[,1])*(1-theta) + plogis(params()$z_Smear[,2] + params()$b_RE[,1] * bacillary)*theta)
-    p_Mgit= as.matrix(plogis(params()$z_Mgit[,1])*(1-theta) + plogis(params()$z_Mgit[,2] + params()$b_RE[,2] * bacillary)*theta)
-    p_Xpert = as.matrix(plogis(params()$z_Xpert[,1])*(1-theta) + plogis(params()$z_Xpert[,2] + params()$b_RE[,3] * bacillary)*theta)
+    p_Smear = qlogis(as.matrix(plogis(params()$z_Smear[,1, drop=FALSE])*(1-plogis(theta)) + plogis(params()$z_Smear[,2, drop=FALSE] + params()$b_RE[,1] * bacillary)*plogis(theta)))
+    p_Mgit= qlogis(as.matrix(plogis(params()$z_Mgit[,1, drop=FALSE])*(1-plogis(theta)) + plogis(params()$z_Mgit[,2, drop=FALSE] + params()$b_RE[,2] * bacillary)*plogis(theta)))
+    p_Xpert = qlogis(as.matrix(plogis(params()$z_Xpert[,1, drop=FALSE])*(1-plogis(theta)) + plogis(params()$z_Xpert[,2, drop=FALSE] + params()$b_RE[,3] * bacillary)*plogis(theta)))
     # browser()
     if (any(is.na(theta))){
       shinyWidgets::sendSweetAlert(
