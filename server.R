@@ -93,7 +93,7 @@ server = function(input, output, session) {
         upper.ci = fn(quantile(x, .975))
         renderUI(
           HTML(glue::glue('
-          Estimated ${of} (coloured vertical line) is: 
+          Estimated {of} (coloured vertical line) is: 
           {strong(format(mean,digits=3))},
           with 95% Credible Interval (solid area) is 
           [{strong(format(lower.ci, digits=3))}, {strong(format(upper.ci, digits=3))}]')
