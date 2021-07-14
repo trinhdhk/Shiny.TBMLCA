@@ -87,13 +87,13 @@ server = function(input, output, session) {
       predicts$p_Mgit = p_Mgit
       predicts$p_Xpert = p_Xpert
       
-      plot_text <- function(x, fn=plogis, what){
+      plot_text <- function(x, fn=plogis, of){
         mean = fn(mean(x))
         lower.ci = fn(quantile(x, .025))
         upper.ci = fn(quantile(x, .975))
         renderUI(
           HTML(glue::glue('
-          Estimated ${what} (coloured vertical line) is: 
+          Estimated ${of} (coloured vertical line) is: 
           {strong(format(mean,digits=3))},
           with 95% Credible Interval (solid area) is 
           [{strong(format(lower.ci, digits=3))}, {strong(format(upper.ci, digits=3))}]')
