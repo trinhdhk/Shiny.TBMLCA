@@ -73,9 +73,13 @@ ui <- f7Page(
                                description = 'Patient\'s Age in years',
                                warn.validator = 'x => x < 18 || x > 100 ? 1 : 0'),
             shiny.fluent::Toggle.shinyInput(inputId = 'hiv_status',
-                                            label = 'HIV Positive*'),
+                                            label = 'HIV Status*',
+                                            offText = 'Confirmed HIV negative',
+                                            onText = 'Confirmed HIV positive'),
             shiny.fluent::Toggle.shinyInput(inputId = 'clin_contact_tb',
-                                            label = 'Past TB Contact*')
+                                            label = 'Past TB Contact*',
+                                            offText = 'Known contact',
+                                            onText = 'No known contact')
           ),
           f7Block(
             f7BlockTitle('Clinical Symptoms'),
@@ -142,7 +146,9 @@ ui <- f7Page(
           f7Block(
             f7BlockTitle('Others'),
             shiny.fluent::Toggle.shinyInput(inputId = 'crypto',
-                                            label = 'Cryptococcal Antigen/Indian Ink*')
+                                            label = 'Cryptococcal Meningitis',
+                                            onText = 'Positive Antigen/Indian Ink',
+                                            offText = 'Negative Antigen/Indian Ink')
           )
         )
         
