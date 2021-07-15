@@ -45,17 +45,26 @@ server = function(input, output, session) {
   observeEvent(input$submit, {
     #TODO select model. now default
     params(readRDS(file.path('fits', paste0(gsub('Model ', '', input$Model), '.RDS'))))
+    `%|%` <- \(L, R) if (isTRUE(is.null(L) || is.na(L))) R else L
+    
+    optionalPredictors <- list(
+      age = (log2(as.numeric(input$age)) - 5.2632) %|% 0,
+      clin_symptoms = as.numeric(input$clin_symptoms) %|% 0,
+      clin_nerve_palsy = as.numeric(input$clin_nerve_palsy) %|% 0,
+      clin_gcs = (15 - as.numeric(input$clin_gcs)) %|% 0 
+    )
+    browser()
     tryCatch(
       X <- rbind(
         input$hiv_status,
-        input$clin_symptoms,
+        optionalPredictors$clin_symptoms,
         input$clin_motor_palsy,
-        input$clin_nerve_palsy,
+        optionalPredictors$clin_nerve_palsy,
         input$clin_contact_tb,
         input$xray_pul_tb,
         input$xray_mil_tb,
         input$crypto,
-        log2(as.numeric(input$age)) - 5.2632,
+        optionalPredictors$age,
         log2(as.numeric(input$clin_illness_day)),
         log10(as.numeric(input$bld_glucose)) - .8233,
         log10(as.numeric(input$csf_glucose)+1) - .5845,
@@ -63,7 +72,7 @@ server = function(input, output, session) {
         log10(as.numeric(input$csf_protein)) - .0160,
         log10(as.numeric(input$csf_lactate)) - .6072,
         log10(as.numeric(input$csf_neutro)+1) - 1.6306,
-        15 - as.numeric(input$clin_gcs),
+        optionalPredictors$clin_gcs,
         log10(as.numeric(input$csf_eos)+1) - .0747,
         log10(as.numeric(input$csf_rbc)+1) - 1.4402,
         (log10(as.numeric(input$csf_neutro)+1) - 1.6306)^2
@@ -88,7 +97,7 @@ server = function(input, output, session) {
       shinyWidgets::sendSweetAlert(
         session, 
         "Error", 
-        text="Some predictors might be invalid.", 
+        text="Some mandatory predictors might be missing or invalid.", 
         type="error"
       )
       shinyjs::js$sendBackFirstTab()
