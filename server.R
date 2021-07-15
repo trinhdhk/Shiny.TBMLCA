@@ -5,6 +5,11 @@ ggplot2::theme_set(ggplot2::theme_bw())
 thematic_shiny()
 
 server = function(input, output, session) {
+  # Invalid values clerance
+  observeEvent(input$errInput, {
+    shiny.fluent::updateTextField.shinyInput(inputId = input$errInput$inputId, value = '')
+    # updateTextInput(inputId='errInput', value=NULL)
+  })
   # Color-scheme aware
   observeEvent(input$color_scheme,{
     file <- paste0('www/assets/oucru_', input$color_scheme)
@@ -53,7 +58,6 @@ server = function(input, output, session) {
       clin_nerve_palsy = as.numeric(input$clin_nerve_palsy) %|% 0,
       clin_gcs = (15 - as.numeric(input$clin_gcs)) %|% 0 
     )
-    browser()
     tryCatch(
       X <- rbind(
         input$hiv_status,

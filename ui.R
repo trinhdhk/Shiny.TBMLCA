@@ -26,6 +26,13 @@ fluentNumericInput = function(inputId, ..., warn.validator = NULL){
             }
             if (status == 1) $(this).attr('data-warn', '1');
             if (status == 2) $(this).attr('data-warn', '2');
+          }).focusout(function(){
+            if ($(this).data('warn') === 2)
+              Shiny.setInputValue('errInput', {
+                inputId : '[inputId]',
+                callId : Math.random()
+              });
+            $(this).attr('data-warn', '0');
           });
           ",
           .open = '[', .close = ']'
