@@ -15,13 +15,13 @@ server = function(input, output, session) {
     # bayesplot::bayesplot_theme_update(
     # )
     if (input$color_scheme=='dark') {
-      bayesplot::color_scheme_set("pink")
+      bayesplot::color_scheme_set("brightblue")
       bayesplot::bayesplot_theme_update(
         plot.background = element_rect(fill='transparent',color='transparent'),
         panel.background = element_rect(fill = "transparent"),
         axis.text = element_text(color = 'white',size = 15,family = 'sans'))
     } else{
-      bayesplot::color_scheme_set("red")
+      bayesplot::color_scheme_set("blue")
       bayesplot::bayesplot_theme_update(
         plot.background = element_rect(fill='transparent',color='transparent'),
         panel.background = element_rect(fill = "transparent"),
@@ -30,11 +30,21 @@ server = function(input, output, session) {
   })
   
   # Get model
+  output$modelSelector <- 
+    renderUI(
+      f7Select(
+        inputId = "Model",
+        label = "Model choice", 
+        width = '400px',
+        choices = paste('Model',gsub('.RDS$', '', list.files('fits'))),
+        selected = 'Model m8_b568'
+      )
+    )
   params <- reactiveVal()
   predicts <- reactiveValues()
   observeEvent(input$submit, {
     #TODO select model. now default
-    params(readRDS('fits/m8l00b458.RDS'))
+    params(readRDS(file.path('fits', paste0(gsub('Model ', '', input$Model), '.RDS'))))
     tryCatch(
       X <- rbind(
         input$hiv_status,
@@ -62,10 +72,14 @@ server = function(input, output, session) {
     )
     # browser()
     theta = params()$a %*% X + as.matrix(params()$a0)
+    bvars = 8 + switch(
+      input$Model,
+      'Model m8_b568' = c(5, 6, 8),
+      'Model m8_b4568' = c(4, 5, 6, 8))
     bacillary = 
       as.matrix(params()$b_HIV) * X[1] +
       as.matrix(params()$b_cs) * X[2] + 
-      params()$b %*% X[c(12, 13, 14, 16), drop=FALSE]
+      params()$b %*% X[bvars, drop=FALSE]
     p_Smear = qlogis(as.matrix(plogis(params()$z_Smear[,1, drop=FALSE])*(1-plogis(theta)) + plogis(params()$z_Smear[,2, drop=FALSE] + params()$b_RE[,1] * bacillary)*plogis(theta)))
     p_Mgit= qlogis(as.matrix(plogis(params()$z_Mgit[,1, drop=FALSE])*(1-plogis(theta)) + plogis(params()$z_Mgit[,2, drop=FALSE] + params()$b_RE[,2] * bacillary)*plogis(theta)))
     p_Xpert = qlogis(as.matrix(plogis(params()$z_Xpert[,1, drop=FALSE])*(1-plogis(theta)) + plogis(params()$z_Xpert[,2, drop=FALSE] + params()$b_RE[,3] * bacillary)*plogis(theta)))
@@ -109,7 +123,7 @@ server = function(input, output, session) {
       )
       
       # RE
-      output$re_text = plot_text(bacillary, fn = c, of = 'bacillary burden')
+      output$re_text = plot_text(bacillary, fn = c, of = 'average bacillary burden')
       output$re_areasPlot = renderPlot(
         bayesplot::mcmc_areas(bacillary, prob=.95,  prob_outer = .995, point_est = 'mean')
       )

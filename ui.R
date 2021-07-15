@@ -3,7 +3,7 @@ library(shinyMobile)
 library(shinyWidgets)
 library(apexcharter)
 
-fluentNumericInput = function(inputId, ...){
+fluentNumericInput = function(inputId, ..., warn.validator = NULL){
   tagList(
     shiny.fluent::TextField.shinyInput(inputId = inputId,
                                        ...),
@@ -12,7 +12,26 @@ fluentNumericInput = function(inputId, ...){
           newstring = $(this).val().slice(0,-1);
           $(this).val(newstring);
         }
-      });"))
+      });")),
+    
+    if (length(warn.validator)) {
+      tags$script(
+        HTML(glue::glue(
+          "
+          $('input#[inputId]').on('change paste keyup', function(){
+            validator = [warn.validator];
+            status = validator($(this).val());
+            if (status == 0) {
+              $(this).attr('data-warn', '0');
+            }
+            if (status == 1) $(this).attr('data-warn', '1');
+            if (status == 2) $(this).attr('data-warn', '2');
+          });
+          ",
+          .open = '[', .close = ']'
+        ))
+      )
+    }
   )
 }
 
@@ -44,7 +63,8 @@ ui <- f7Page(
             fluentNumericInput(inputId = 'age',
                                label = 'Patient Age',
                                placeholder = '(years)',
-                               description = 'Patient\'s Age in years'),
+                               description = 'Patient\'s Age in years',
+                               warn.validator = 'x => x < 18 || x > 100 ? 1 : 0'),
             shiny.fluent::Toggle.shinyInput(inputId = 'hiv_status',
                                             label = 'HIV Positive'),
             shiny.fluent::Toggle.shinyInput(inputId = 'clin_contact_tb',
@@ -60,7 +80,8 @@ ui <- f7Page(
                                             label = 'Cranial nerve palsy'),
             fluentNumericInput(inputId = 'clin_gcs',
                                label = 'Glasgow Coma Score',
-                               placeholder = '3-15'),
+                               placeholder = '3-15',
+                               warn.validator = 'x => x < 3 || x > 15 ? 2 : 0'),
             fluentNumericInput(inputId = 'clin_illness_day',
                                label = 'Days from first symptoms',
                                placeholder = '(days)',
@@ -83,7 +104,8 @@ ui <- f7Page(
                                placeholder = '(cells/μL)'),
             fluentNumericInput(inputId = 'csf_eos',
                                label = 'CSF Eosinophils Count',
-                               placeholder = '(cells/μL)'),
+                               placeholder = '(cells/μL)',
+                               warn.validator = 'x => x > 1000 ? 1 : 0'),
             fluentNumericInput(inputId = 'csf_rbc',
                                label = 'CSF Red Cell Count',
                                placeholder = '(cells/μL)')
@@ -92,16 +114,20 @@ ui <- f7Page(
             f7BlockTitle('Biochemical Tests'),
             fluentNumericInput(inputId = 'csf_glucose',
                                label = 'CSF Glucose',
-                               placeholder = '(mmol/L)'),
+                               placeholder = '(mmol/L)',
+                               warn.validator = 'x => x > 20 ? 2 : x > 10 ? 1 : 0'),
             fluentNumericInput(inputId = 'bld_glucose',
                                label = 'Paired Blood Glucose',
-                               placeholder = '(mmol/L)'),
+                               placeholder = '(mmol/L)',
+                               warn.validator = 'x => x > 20 ? 2 : x > 10 ? 1 : 0'),
             fluentNumericInput(inputId = 'csf_protein',
                                label = 'CSF Protein',
-                               placeholder = '(g/L)'),
+                               placeholder = '(g/L)',
+                               warn.validator = 'x => x > 20 ? 2 : x > 10 ? 1 : 0'),
             fluentNumericInput(inputId = 'csf_lactate',
                                label = 'CSF Lactate',
-                               placeholder = '(mmol/L)')
+                               placeholder = '(mmol/L)',
+                               warn.validator = 'x => x > 20 ? 2 : x > 10 ? 1 : 0')
           ),
           f7Block(
             f7BlockTitle('Others'),
@@ -117,14 +143,11 @@ ui <- f7Page(
         tabName = "Diagnosis",
         icon = f7Icon("graph_circle"),
         active = FALSE,
-        f7Select(
-          inputId = "Model",
-          label = "Model choice", 
-          choices = paste("Model", 1:5)
-        ),
+        uiOutput('modelSelector'),
+        
         div(
           f7Block(shiny.fluent::PrimaryButton.shinyInput(inputId = 'submit', text = 'Run')),
-          style = 'width:100px;'
+          style = 'width:400px'
         ),
         # div(style="clear:both"),
         
@@ -147,7 +170,7 @@ ui <- f7Page(
           intensity = 10,
           hover = TRUE,
           f7Card(
-            title = "Average Bacillary Burden",
+            title = "Average Bacillary Burden (given TBM Positve)",
             uiOutput('re_text'),
             shinycssloaders::withSpinner(plotOutput('re_areasPlot'))
           )

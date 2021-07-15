@@ -35,6 +35,16 @@ input[type='text']{
     padding: 10px 20px 10px 10px;
     border-width: 0 0 1px 0;
     border-bottom-color: var(--f7-theme-color);
+    
+   &[data-warn='1']{
+        background-color: #FCD12A;
+        color: #000;
+    }
+    &[data-warn='2']{
+        background-color: #840C24;
+        color: #fff;
+    } 
+  
 }
   
 .theme-dark{
@@ -54,6 +64,14 @@ input[type='text']{
     }
     input[type='text']{
       background-color: #000;
+      &[data-warn='1']{
+        background-color: #FCD12A;
+        color: #000;
+      }
+      &[data-warn='2']{
+          background-color: #840C24;
+          color: #fff;
+      }
       ::placeholder{
         color: var(--f7-color-gray);
       }
