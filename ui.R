@@ -78,8 +78,8 @@ ui <- f7Page(
                                             onText = 'Confirmed HIV positive'),
             shiny.fluent::Toggle.shinyInput(inputId = 'clin_contact_tb',
                                             label = 'Past TB Contact*',
-                                            offText = 'Known contact',
-                                            onText = 'No known contact')
+                                            offText = 'No known contact',
+                                            onText = 'Have known contact')
           ),
           f7Block(
             f7BlockTitle('Clinical Symptoms'),
