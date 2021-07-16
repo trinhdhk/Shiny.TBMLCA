@@ -148,8 +148,9 @@ ui <- f7Page(
             shiny.fluent::Toggle.shinyInput(inputId = 'crypto',
                                             label = 'Cryptococcal Meningitis',
                                             onText = 'Positive Antigen/Indian Ink',
-                                            offText = 'Negative Antigen/Indian Ink')
-          )
+                                            offText = 'Negative Antigen/Indian Ink'),
+            f7BlockFooter('Model was not trained with yellow-flagged values and thus might not work correctly. Reg-flagged values are out of possible range and will be removed.')
+          ),
         )
         
         

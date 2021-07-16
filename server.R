@@ -13,7 +13,7 @@ server = function(input, output, session) {
   # Color-scheme aware
   observeEvent(input$color_scheme,{
     file <- paste0('www/assets/oucru_', input$color_scheme)
-    output$oucru_logo <- renderUI(tags$img(src = paste('data:image/jpeg;base64,', readLines(file, warn=FALSE))))
+    output$oucru_logo <- renderUI(tags$a(href = 'https://www.oucru.org', target = '_blank', tags$img(alt = 'OUCRU logo', style = 'max-width: 250px; border-radius:10px; border: 1px solid #fff', src = paste('data:image/jpeg;base64,', readLines(file, warn=FALSE)))))
     plot_theme <- switch(input$color_scheme, light = theme_bw, dark = theme_dark)
     bayesplot::bayesplot_theme_set(plot_theme())
     
