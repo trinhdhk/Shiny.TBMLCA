@@ -34,6 +34,9 @@ server = function(input, output, session) {
     }
   })
   
+  model_files <- gsub('.RDS$', '', list.files('fits'))
+  full_models <- grep('full', model_files, value = TRUE)
+  simplified_models <- grep('simplified', model_files, value = TRUE)
   # Get model
   output$modelSelector <- 
     renderUI(
@@ -41,15 +44,15 @@ server = function(input, output, session) {
         inputId = "Model",
         label = "Model choice", 
         width = '400px',
-        choices = paste('Model',gsub('.RDS$', '', list.files('fits'))),
-        selected = 'Model m8_b568'
+        choices = model_files,
+        selected = 'Model 8 (b58) full'
       )
     )
+
   params <- reactiveVal()
   predicts <- reactiveValues()
   observeEvent(input$submit, {
-    #TODO select model. now default
-    params(readRDS(file.path('fits', paste0(gsub('Model ', '', input$Model), '.RDS'))))
+   
     `%|%` <- \(L, R) if (isTRUE(is.null(L) || is.na(L))) R else L
     
     optionalPredictors <- list(
@@ -84,19 +87,52 @@ server = function(input, output, session) {
       error = function(err) shinyWidgets::sendSweetAlert(session, 'Error', text=err, type='error')
     )
     # browser()
-    theta = params()$a %*% X + as.matrix(params()$a0)
-    bvars = 8 + switch(
-      input$Model,
-      'Model m8_b568' = c(5, 6, 8),
-      'Model m8_b4568' = c(4, 5, 6, 8))
-    bacillary = 
-      as.matrix(params()$b_HIV) * X[1] +
-      as.matrix(params()$b_cs) * X[2] + 
-      params()$b %*% X[bvars, drop=FALSE]
-    p_Smear = qlogis(as.matrix(plogis(params()$z_Smear[,1, drop=FALSE])*(1-plogis(theta)) + plogis(params()$z_Smear[,2, drop=FALSE] + params()$b_RE[,1] * bacillary)*plogis(theta)))
-    p_Mgit= qlogis(as.matrix(plogis(params()$z_Mgit[,1, drop=FALSE])*(1-plogis(theta)) + plogis(params()$z_Mgit[,2, drop=FALSE] + params()$b_RE[,2] * bacillary)*plogis(theta)))
-    p_Xpert = qlogis(as.matrix(plogis(params()$z_Xpert[,1, drop=FALSE])*(1-plogis(theta)) + plogis(params()$z_Xpert[,2, drop=FALSE] + params()$b_RE[,3] * bacillary)*plogis(theta)))
-    # browser()
+    forcedSimplified <- any(sapply(list(input$crypto, 
+                                   input$bld_glucose, input$csf_glucose,
+                                   input$csf_lympho, input$csf_protein, 
+                                   input$csf_lactate, input$csf_neutro,
+                                   input$csf_eos, input$csf_rbc), 
+                                   function(x) {
+                                     is.na(as.numeric(x))
+                                   }))
+    if (forcedSimplified){
+      browser()
+      shinyMobile::updateF7Select(session = session,
+                                  inputId = 'Model',
+                                  selected = 'Model 8 (b58) simplified'
+      )
+      shinyjs::js$setInput(list('Model', 'Model 8 (b58) simplified'))
+      params(readRDS(file.path('fits', paste0(input$Model, '.RDS')))$coef)
+    }
+      
+    else{
+      shinyMobile::updateF7Select(session = session,
+                                  inputId = 'Model',
+                                  selected = 'Model 8 (b58) full'
+      )
+      shinyjs::js$setInput(list('Model', 'Model 8 (b58) full'))
+      params(readRDS(file.path('fits', paste0(input$Model, '.RDS')))$coef)
+    }
+      
+     #TODO select model. now default
+    if (input$Model %in% simplified_models){
+      theta = params()$d %*% X[c(1,2,3,4,5,6,7,9,10,17)] + as.matrix(params()$d0)
+    } else {
+      theta = params()$a %*% X + as.matrix(params()$a0)
+      bvars = 8 + switch(
+        input$Model,
+        'Model m8_b568' = c(5, 6, 8),
+        'Model m8_b4568' = c(4, 5, 6, 8))
+      bacillary = 
+        as.matrix(params()$b_HIV) * X[1] +
+        as.matrix(params()$b_cs) * X[2] + 
+        params()$b %*% X[bvars, drop=FALSE]
+      p_Smear = qlogis(as.matrix(plogis(params()$z_Smear[,1, drop=FALSE])*(1-plogis(theta)) + plogis(params()$z_Smear[,2, drop=FALSE] + params()$b_RE[,1] * bacillary)*plogis(theta)))
+      p_Mgit= qlogis(as.matrix(plogis(params()$z_Mgit[,1, drop=FALSE])*(1-plogis(theta)) + plogis(params()$z_Mgit[,2, drop=FALSE] + params()$b_RE[,2] * bacillary)*plogis(theta)))
+      p_Xpert = qlogis(as.matrix(plogis(params()$z_Xpert[,1, drop=FALSE])*(1-plogis(theta)) + plogis(params()$z_Xpert[,2, drop=FALSE] + params()$b_RE[,3] * bacillary)*plogis(theta)))
+      # browser()
+    }
+    
     if (any(is.na(theta))){
       shinyWidgets::sendSweetAlert(
         session, 
@@ -106,15 +142,6 @@ server = function(input, output, session) {
       )
       shinyjs::js$sendBackFirstTab()
     } else {
-      colnames(theta) = "Probability"
-      predicts$theta = theta
-      colnames(bacillary) = "Bacillary Burden"
-      predicts$bacillary = bacillary
-      colnames(p_Smear) <- colnames(p_Mgit) <- colnames(p_Xpert) <- 'Probability'
-      predicts$p_Smear = p_Smear
-      predicts$p_Mgit = p_Mgit
-      predicts$p_Xpert = p_Xpert
-      
       plot_text <- function(x, fn=plogis, of){
         mean = fn(mean(x))
         lower.ci = fn(quantile(x, .025))
@@ -127,46 +154,73 @@ server = function(input, output, session) {
           [{strong(format(lower.ci, digits=3))}, {strong(format(upper.ci, digits=3))}]')
           ))
       }
+      colnames(theta) = "Probability"
+      predicts$theta = theta
+      
       # Theta ----
       output$theta_text = plot_text(theta, of = 'probability of having TBM')
-      output$theta_areasPlot = renderPlot(
+      output$theta_areasPlot = renderPlot({
+        q <- quantile(theta, c(.005, .025, .25, .75, .975, .995))
+        q <- round(c(q, mean(theta)), digits=3)
+        l <- format(round(plogis(q),digits=3), scientific=FALSE)
+        # qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)
         bayesplot::mcmc_areas(theta, prob = .95, prob_outer = .995,  point_est = 'mean') + 
-          scale_x_continuous(breaks=qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)),
-                             labels = c('.0001',.001,.01, seq(.1,.9,.2),.99))
-      )
+          scale_x_continuous(breaks=q, label=l)
+      })
       
-      # RE
-      output$re_text = plot_text(bacillary, fn = c, of = 'average bacillary burden')
-      output$re_areasPlot = renderPlot(
-        bayesplot::mcmc_areas(bacillary, prob=.95,  prob_outer = .995, point_est = 'mean')
-      )
-      
-      output$test_text = renderText("Below plots show estimation of each confimation test's chance of positive.")
-      # Tests
-      output$smear_text = plot_text(p_Smear, of = 'probability of positive Smear')
-      output$smear_areasPlot = renderPlot(
-        bayesplot::mcmc_areas(p_Smear, prob=.95, prob_outer = .995, point_est = 'mean') + 
-          scale_x_continuous(breaks=qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)),
-                             labels = c('.0001',.001,.01, seq(.1,.9,.2),.99))
-      )
-      output$mgit_text = plot_text(p_Mgit, of = 'probability of positive Mgit')
-      output$mgit_areasPlot = renderPlot(
-        bayesplot::mcmc_areas(p_Mgit, prob=.95, prob_outer = .995, point_est = 'mean') + 
-          scale_x_continuous(breaks=qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)),
-                             labels = c('.0001',.001,.01, seq(.1,.9,.2),.99))
-      )
-      output$xpert_text = plot_text(p_Xpert, of = 'probability of positive GeneXpert')
-      output$xpert_areasPlot = renderPlot(
-        bayesplot::mcmc_areas(p_Xpert, prob=.95, prob_outer = .995, point_est = 'mean') + 
-          scale_x_continuous(breaks=qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)),
-                             labels = c('.0001',.001,.01, seq(.1,.9,.2),.99))
-      )
-      
-      output$tests_areasPlot = renderPlot(
-        bayesplot::mcmc_areas(p_Smear, prob=.95, prob_outer = .995, point_est = 'mean') + ggtitle('Smear') +
-          bayesplot::mcmc_areas(p_Mgit, prob=.95, point_est = 'mean') + ggtitle('Mgit') + 
-          bayesplot::mcmc_areas(p_Xpert, prob=.95, point_est = 'mean') + ggtitle('Xpert')
-      )
+      if (input$Model %in% simplified_models){
+        output$re_text <- output$test_text <- renderUI(p('Not supported in simplified model'))
+      } else {
+        colnames(bacillary) = "Bacillary Burden"
+        predicts$bacillary = bacillary
+        colnames(p_Smear) <- colnames(p_Mgit) <- colnames(p_Xpert) <- 'Probability'
+        predicts$p_Smear = p_Smear
+        predicts$p_Mgit = p_Mgit
+        predicts$p_Xpert = p_Xpert
+        
+        # RE
+        output$re_text = plot_text(bacillary, fn = c, of = 'average bacillary burden')
+        output$re_areasPlot = renderPlot(
+          bayesplot::mcmc_areas(bacillary, prob=.95,  prob_outer = .995, point_est = 'mean')
+        )
+        
+        output$test_text = renderText("Below plots show estimation of each confimation test's chance of positive.")
+        # Tests
+        output$smear_text = plot_text(p_Smear, of = 'probability of positive Smear')
+        output$smear_areasPlot = renderPlot({
+          q <- quantile(p_Smear, c(.005, .025, .25, .75, .975, .995))
+          q <- round(c(q, mean(p_Smear)), digits=3)
+          l <- format(round(plogis(q),digits=3), scientific=FALSE)
+          # qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)
+          bayesplot::mcmc_areas(p_Smear, prob = .95, prob_outer = .995,  point_est = 'mean') + 
+            scale_x_continuous(breaks=q, label=l)
+        })
+        output$mgit_text = plot_text(p_Mgit, of = 'probability of positive Mgit')
+        output$mgit_areasPlot = renderPlot({
+          q <- quantile(p_Mgit, c(.005, .025, .25, .75, .975, .995))
+          q <- round(c(q, mean(p_Mgit)), digits=3)
+          l <- format(round(plogis(q),digits=3), scientific=FALSE)
+          # qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)
+          bayesplot::mcmc_areas(p_Mgit, prob = .95, prob_outer = .995,  point_est = 'mean') + 
+            scale_x_continuous(breaks=q, label=l)
+        })
+        output$xpert_text = plot_text(p_Xpert, of = 'probability of positive GeneXpert')
+        output$xpert_areasPlot = renderPlot({
+          q <- quantile(p_Xpert, c(.005, .025, .25, .75, .975, .995))
+          q <- round(c(q, mean(p_Xpert)), digits=3)
+          l <- format(round(plogis(q),digits=3), scientific=FALSE)
+          # qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)
+          bayesplot::mcmc_areas(p_Xpert, prob = .95, prob_outer = .995,  point_est = 'mean') + 
+            scale_x_continuous(breaks=q, label=l)
+        })
+        
+        # output$tests_areasPlot = renderPlot(
+        #   bayesplot::mcmc_areas(p_Smear, prob=.95, prob_outer = .995, point_est = 'mean') + ggtitle('Smear') +
+        #     bayesplot::mcmc_areas(p_Mgit, prob=.95, point_est = 'mean') + ggtitle('Mgit') + 
+        #     bayesplot::mcmc_areas(p_Xpert, prob=.95, point_est = 'mean') + ggtitle('Xpert')
+        # )
+      }
+     
     }
   })
   

@@ -2,6 +2,7 @@ library(shiny)
 library(shinyMobile)
 library(shinyWidgets)
 library(apexcharter)
+options('spinner.type' = 8)
 
 fluentNumericInput = function(inputId, ..., warn.validator = NULL){
   tagList(
@@ -27,12 +28,14 @@ fluentNumericInput = function(inputId, ..., warn.validator = NULL){
             if (status == 1) $(this).attr('data-warn', '1');
             if (status == 2) $(this).attr('data-warn', '2');
           }).focusout(function(){
-            if ($(this).data('warn') === 2)
-              Shiny.setInputValue('errInput', {
+            if ($(this).attr('data-warn') === '2'){
+               Shiny.setInputValue('errInput', {
                 inputId : '[inputId]',
                 callId : Math.random()
               });
-            $(this).attr('data-warn', '0');
+              $(this).attr('data-warn', '0');
+            }
+            if ($(this).val() == '') $(this).attr('data-warn', '0');
           });
           ",
           .open = '[', .close = ']'
@@ -48,6 +51,10 @@ ui <- f7Page(
     text = "
     shinyjs.sendBackFirstTab = () => $('.toolbar-inner > :first-child')[0].click();
   ", functions = c("sendBackFirstTab")),
+  shinyjs::extendShinyjs(
+    text = "shinyjs.setInput = (input) => Shiny.setInputValue(input[0], input[1]);",
+    functions = "setInput"
+  ),
   f7TabLayout(
     navbar = f7Navbar(
       title = "TBM-LCA Diagnosis Model",
