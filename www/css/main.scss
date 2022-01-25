@@ -40,6 +40,13 @@ div[data-value='Diagnosis']{
 }
 
 input[type='text']{
+  
+    .ms-TextField &{
+      height: 100%;
+      padding-left: 5px;
+      padding-right:0;
+      
+     }
     padding: 10px 20px 10px 10px;
     border-width: 0 0 1px 0;
     border-bottom-color: var(--f7-theme-color);
@@ -71,6 +78,9 @@ input[type='text']{
       color: var(--f7-block-title-text-color);
     }
     input[type='text']{
+      height: 100%;
+      padding-left: 5px;
+      padding-right:0;
       background-color: #000;
       &[data-warn='1']{
         background-color: #FCD12A;
@@ -118,3 +128,4 @@ input[type='text']{
     }
   }
 }
+
