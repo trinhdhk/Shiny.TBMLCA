@@ -51,6 +51,8 @@ template_dt <-
     contact_tb = vector(),
     gcs = vector(),
     illness_day = vector(),
+    headache = vector(),
+    psychosis = vector(),
     
     #Xray 
     xray_pul_tb = vector(),
@@ -71,17 +73,20 @@ template_dt <-
     cryptococ = vector()
   )
 
-ess_var = c('hiv', 'tb_symptoms', 'cranial_nerve_palsy', 'focal_neuro_deficit', 
-            'contact_tb', 'gcs', 'illness_day', 'xray_pul_tb', 'xray_mil_tb')
+ess_var = c('hiv', 'tb_symptoms','focal_neuro_deficit', 'cranial_nerve_palsy',  
+            'contact_tb', 'xray_pul_tb', 'xray_mil_tb', 'illness_day', 'gcs')
+add_var = c('headache', 'psychosis')
 
 create_data = 
   function(input, session){
     if (length(input$custom_data)) {
       dt = read.csv(req(input$custom_data$datapath), check.names = FALSE)
-      if (!all(ess_var %in% names(dt))) {
+      # browser()
+      if (all.equal(names(dt), names(template_dt))[[1]] != TRUE) {
         f7Dialog(id = "invalid-file", 
                  title = "Invalid file",
                  text = "This file is not following the template. Please re-check!")
+        # input$custom_data = NULL
         return(NA)
       }
       return(dt)
@@ -97,11 +102,9 @@ create_data =
 create_recipe = 
   function(dt, input, session){
     if (any(is.na(dt[1,ess_var]))) { model = ''}
-      # shinyWidgets::sendSweetAlert(session,
-      #                              title = 'Missing essential features',type = 'error',
-      #                              p('Some essential features are missing. Please check.')
-      # )
     else if (any(is.na(dt[1,names(template_dt)]))){
+      # if (any(is.na(dt[1,add_var]))) model = ''
+      # else 
       model = 'simplified'
     } else model = 'full'
     

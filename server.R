@@ -4,8 +4,19 @@ library(thematic)
 ggplot2::theme_set(ggplot2::theme_bw())
 thematic_shiny()
 
-misc = new.env()
-source('R/misc.R', local=misc)
+plot_text <- function(x, fn=\(x) x, of){
+  mean = mean(fn(x))
+  lower.ci = quantile(fn(x),.025)
+  upper.ci = quantile(fn(x),.975)
+  renderUI(
+    HTML(glue::glue('
+          Expected {of} (coloured vertical line) is: 
+          {strong(format(mean,digits=3))},
+          with 95% Credible Interval (solid area) is 
+          [{strong(format(lower.ci, digits=3))}, {strong(format(upper.ci, digits=3))}]')
+    ))
+}
+
 server = function(input, output, session) {
   # shinyjs::js$disableDiag()
   output$data_dict = renderTable(
@@ -26,7 +37,7 @@ server = function(input, output, session) {
       'csf_rbc', 'CSF Red Cell count (cells/μL)',
       'csf_glu', 'CSF Glucose (mmol/L)',
       'bld_glu', 'Paired Blood Glucose (mmol/L)',
-      'csf_pro', 'CSF Protein (g/dL)',
+      'csf_pro', 'CSF Protein (g/L)',
       'csf_lac', 'CSF Lactate (mmol/L)',
       'cryptococ', 'Cryptococcal Meningitis with Antigen or Indian Ink',
       'gram', 'Other bacterial infection, with Gram stain',
@@ -80,15 +91,26 @@ server = function(input, output, session) {
 
  
   # params <- reactiveVal()
-  # predicts <- reactiveValues()
-  observeEvent(c(input$submit, input$custom_data), {
-    
+  predicts <- reactiveValues()
+  .last_val <- reactiveValues()
+  observeEvent(input$submit_home, {
+    shinyMobile::updateF7Tabs('mainTabs', selected = 'Diagnosis', session=session)
+    shinyjs::js$submit()
+  })
+  observeEvent(input$send_back, {
+    shinyjs::js$sendBackFirstTab()
+  })
+  observeEvent(c(input$submit, input$submit2, input$custom_data), {
+    # browser()
+    # .last_val$scenario <- input$scenario
    
     `%|%` <- \(L, R) if (isTRUE(is.null(L) || is.na(L))) R else L
     # browser()
     data = misc$create_data(input, session)
     if (!is.data.frame(data)) return(1)
+   
     mode = list(misc$create_recipe(data, input, session), nrow(data) == 1)
+    # browser()
     if (mode[[2]] == 1) shinyjs::js$enableDiag() else shinyjs::js$disableDiag()
     if (mode[[1]] == ''){
       # shinyWidgets::sendSweetAlert(
@@ -116,7 +138,8 @@ server = function(input, output, session) {
         )
       else 
         list(
-          a = read.csv('fits/s1/a.csv')
+          a = read.csv('fits/s1/a.csv', check.names = FALSE) |> as.matrix(),
+          scales = jsonlite::read_json('fits/m3/scales.json', simplifyVector = TRUE)
         )
     if (mode[[1]] == 'full'){
       # browser()
@@ -133,6 +156,52 @@ server = function(input, output, session) {
     
         } else {
           # browser()
+         
+          output$scenario_options <- 
+            renderUI(
+              f7Flex(
+                f7Block(
+                  # div(
+                  "You can select a scenario in which some confirmatory test results have been retrieved.",
+                  "All probabilities of test positive are for future tests",
+                  id = 'scenario-instructions',
+                  # style = "width: calc(100% - 500px); padding: 30px 10px 10px 30px"
+                  # ),
+                ),
+                
+                
+                f7Block(
+                  id = 'scenario-options',
+                  f7SmartSelect(
+                    inputId = 'scenario',
+                    label = "Current scenario",
+                    selected = "No test",
+                    choices = list(
+                      "No test" = '0',
+                      "Smear (-)" = 'a',
+                      "Xpert (-)" = 'b',
+                      "Smear (-) + MGIT (-)" = 'c',
+                      "Smear (-) + Xpert (-)" = 'd',
+                      "All tests (-)" = 'e'
+                    ),
+                    openIn='popover',
+                    searchbar=FALSE
+                  ),
+                  f7Block(shiny.fluent::PrimaryButton.shinyInput(inputId = 'submit2', text = 'Re-estimate with scenario')),
+                  # style = 'width:400px;'
+                )
+              )
+            )
+          # browser()
+          if (length(.last_val$scenario)) updateF7SmartSelect(inputId = 'scenario', selected = .last_val$scenario)
+          if (identical(data,.last_val$data) & (identical(input$scenario, .last_val$scenario) | is.null(input$submit2))) return()
+          print(identical(data,.last_val$data))
+          print(identical(input$scenario, .last_val$scenario))
+          print('---')
+          .last_val$data = data
+          .last_val$scenario = input$scenario
+         
+          
           X = misc$create_model_matrix(misc$rescale_data(data, params$scales))
           
           bvars = c(3,4,5,6,7,8) + 9 + 1 #nXc=9, intercept=1
@@ -161,10 +230,7 @@ server = function(input, output, session) {
             e = misc$test_prob(theta, fpr, tpr, neg=TRUE)
           )
           
-          # if scenario == 0
-          # theta   = theta
-          
-          if (input$scenario != '0'){
+          if (length(input$scenario)) if (input$scenario != '0'){
             theta_orig = theta
             scenario = scenarios[[input$scenario]]
             theta = theta * scenario$tpr / scenario$prob
@@ -174,18 +240,7 @@ server = function(input, output, session) {
           p_Mgit  = (as.matrix(plogis(params$z[,'z_Mgit[1]',  drop=FALSE])*(1-(theta)) + plogis(params$z[,'z_Mgit[2]',  drop=FALSE] + params$b[,'b_RE[2]'] * bacillary)*(theta)))
           p_Xpert = (as.matrix(plogis(params$z[,'z_Xpert[1]', drop=FALSE])*(1-(theta)) + plogis(params$z[,'z_Xpert[2]', drop=FALSE] + params$b[,'b_RE[3]'] * bacillary)*(theta)))
           
-          plot_text <- function(x, fn=\(x) x, of){
-            mean = mean(fn(x))
-            lower.ci = quantile(fn(x),.025)
-            upper.ci = quantile(fn(x),.975)
-            renderUI(
-              HTML(glue::glue('
-          Estimated {of} (coloured vertical line) is: 
-          {strong(format(mean,digits=3))},
-          with 95% Credible Interval (solid area) is 
-          [{strong(format(lower.ci, digits=3))}, {strong(format(upper.ci, digits=3))}]')
-              ))
-          }
+          
           colnames(theta) = "Probability"
           colnames(ztheta) = "Score"
           predicts$theta = theta
@@ -211,12 +266,18 @@ server = function(input, output, session) {
           
           # RE
           output$re_text = plot_text(bacillary, fn = c, of = 'average bacillary burden')
-          output$re_areasPlot = renderPlot(
-            bayesplot::mcmc_areas(bacillary, prob=.95,  prob_outer = .995, point_est = 'mean') + 
-              theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+          output$re_areasPlot = renderPlot({
+            q <- quantile(bacillary, c(.005, .25, .75, .975))
+            q <- round(c(q, mean(bacillary)), digits=2)
+            l <- format(round((q),digits=2), scientific=FALSE,  drop0trailing=TRUE)
+            bayesplot::mcmc_areas(bacillary, prob=.95,  prob_outer = 1, point_est = 'mean') +
+              scale_x_continuous(breaks=q, label=l) 
+            # theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+          }
+            
           )
           
-          output$test_text = renderText("Below plots show estimation of each confimation test's chance of positive.")
+          output$test_text = renderText("Below plots show estimates of each confimation test's possibility of positive.")
           # Tests
           output$smear_text = plot_text(p_Smear, of = 'probability of positive Smear')
           output$smear_areasPlot = renderPlot({
@@ -251,6 +312,7 @@ server = function(input, output, session) {
           
         } 
       } else {
+
         
         # browser()
         X = misc$create_model_matrix(misc$rescale_data(data, params$scales))
@@ -318,6 +380,98 @@ server = function(input, output, session) {
             f7Block(
               f7DownloadButton('sample_array',
                                      label = 'Download posterior samples'),
+              f7BlockFooter("Sample file contains MCMC samples which work best for future model.")),
+            f7Block(
+              f7DownloadButton('sample_summary',
+                               label = 'Download posterior summary'),
+              f7BlockFooter("Summary file contains point estimates and credible intervals which work best for result report."))
+          )
+        )
+      }
+    } else if (mode[[1]] == 'simplified') {
+      if (mode[[2]]==1) {
+        # browser() 
+        if (identical(data,.last_val$data)) return()
+        .last_val$data = data
+        output$scenario_options = renderUI(f7Block('Model runs in simplified mode as required CSF biomarkers are not provided. Only TBM risk is available.'))
+        # browser()
+        dt = data
+        scale_Xc = params$scales
+        dt$illness_day = (log2(dt$illness_day) - scale_Xc$id$`scaled:center`) / scale_Xc$id$`scaled:scale` 
+        dt$gcs = (12-dt$gcs - scale_Xc$gcs$`scaled:center`) / scale_Xc$gcs$`scaled:scale` 
+        
+        X = cbind(1, dt[, c(misc$ess_var[1:(length(misc$ess_var)-2)], misc$add_var, misc$ess_var[-1:0+length(misc$ess_var)])])
+        # a = params$a[1:3000,]
+        
+        ztheta = params$a %*% t(X)
+        theta = plogis(ztheta)
+        
+        colnames(theta) = "Probability"
+        
+        # Theta ----
+        output$theta_text = plot_text(theta, of = 'probability of TBM')
+        output$theta_areasPlot = renderPlot({
+          q <- quantile(theta, c(.025, .25, .75, .975))
+          q <- round(c(q, mean(theta)), digits=4)
+          l <- format(round((q),digits=4), scientific=FALSE,  drop0trailing=TRUE)
+          # qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)
+          bayesplot::mcmc_areas(theta, prob = .95, prob_outer = .995,  point_est = 'mean') + 
+            scale_x_continuous(breaks=q, label=l) + 
+            theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+        })
+        output$re_text <- output$smear_text <- output$mgit_text <- output$xpert_text <- renderText('')
+        
+        output$re_areasPlot <- output$smear_areasPlot <- output$mgit_areasPlot <- output$xpert_areasPlot <- 
+          renderPlot(ggplot2::ggplot() + ggplot2:::annotate('text', x = 3, y= 3, label = "Not available in simplified mode") + 
+                       ggplot2::theme(axis.title = element_blank(), axis.ticks = element_blank(), axis.text = element_blank()) 
+                     + xlim(2,4) + ylim(2,4))
+      } else {
+        dt = data
+        scale_Xc = params$scales
+        dt$illness_day = (log2(dt$illness_day) - scale_Xc$id$`scaled:center`) / scale_Xc$id$`scaled:scale` 
+        dt$gcs = (12-dt$gcs - scale_Xc$gcs$`scaled:center`) / scale_Xc$gcs$`scaled:scale` 
+        
+        X = cbind(1, dt[, c(misc$ess_var[1:(length(misc$ess_var)-2)], misc$add_var, misc$ess_var[-1:0+length(misc$ess_var)])])
+        # a = params$a[1:3000,]
+        
+        ztheta = a %*% t(X)
+        theta = plogis(ztheta)
+        
+        sample_array = list(theta)
+        names(sample_array) = c('p_tbm')
+        
+        sample_summary =
+          sapply(sample_array, function(arr) {
+            data.frame(
+              mean = apply(arr, 2, mean),
+              median = apply(arr, 2, quantile, .5),
+              lower.ci=apply(arr,2,quantile, .25),
+              upper.ci=apply(arr,2,quantile, .25)
+            )
+          }, simplify = FALSE)
+        output$sample_array = downloadHandler(
+          filename = 'posterior_est.json',
+          content =  function(file) {
+            dt = sample_array
+            jsonlite::write_json(dt, file)
+          },
+          contentType = 'text/json'
+        )
+        output$sample_summary = downloadHandler(
+          filename = 'posterior_summary.json',
+          content = function(file) {
+            dt = sample_summary
+            jsonlite::write_json(dt, file)
+          },
+          contentType = 'text/json'
+        )
+        
+        output$download_results = renderUI(
+          f7Flex(
+            f7BlockFooter('Not all required CSF biomarkers are provided. Model runs in simplified mode, only p_TBM is available.'),
+            f7Block(
+              f7DownloadButton('sample_array',
+                               label = 'Download posterior samples'),
               f7BlockFooter("Sample file contains MCMC samples which work best for future model.")),
             f7Block(
               f7DownloadButton('sample_summary',

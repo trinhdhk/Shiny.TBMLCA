@@ -1,5 +1,6 @@
 *{
   transition: all 0.1s;
+  font-family: 'Source Sans Pro', sans-serif;
 }
 .item-inner{
   .item-title{
@@ -9,16 +10,38 @@
     }
   }
 }
+
+
+.accordion-item-content *{
+  color: #000;
+  
+  .theme-dark & {
+    color: inherit;
+  }
+}
+
+#submit{
+  display: none;
+  width: 0; height: 0; overflow: hidden;
+}
+  
 .block-title{
   font-weight: bold;
 }
-div[data-value='Information']{
+div[data-value='Individual Risk']{
   .display-flex {
   flex-wrap: wrap;
   
-  & > * {
-    flex-basis: 30%;
+   & > * {
+    flex-basis: 32%;
+    @media only screen and (max-width:850px){
+       flex-basis: 50%;
+    }
+    @media only screen and (max-width:450px){
+       flex-basis: 100%;
+    }
   }
+    
 }
 }
 
@@ -128,4 +151,57 @@ input[type='text']{
     }
   }
 }
+
+div.title{
+  img.logo{
+    height: 60px;
+    width: auto;
+    float: left;
+    transition: all .5s;
+    
+    @media only screen and (max-width: 450px){
+      height:120px;
+    }
+    
+    & + span{
+      top: 20px;
+      position: relative;
+      font-weight: 800;
+      
+      @media only screen and (max-width: 450px){
+        display: none;
+      }
+    }
+  }
+}
+
+div.block.float{
+  position: fixed;
+  bottom: 50px;
+  right: 20px;
+  z-index: 10000;
+  
+  button {
+    padding: 20px 40px 20px 40px;
+    font-weight: 800;
+  }
+}
+
+#scenario_options {
+  #scenario-instructions {
+    width: calc(100% - 500px); 
+    padding: 30px 10px 10px 30px;
+    @media only screen and (max-width: 450px) {
+      flex-basis: 100%;
+    }
+    
+  }}
+  
+  #scenario-options {
+    wdith: 400px;
+    
+    @media only screen and (max-width: 450px) {
+      flex-basis: 100%;
+    }
+  }
 
