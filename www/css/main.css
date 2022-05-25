@@ -30,22 +30,22 @@
   font-weight: bold;
 }
 
-div[data-value='Individual Calculation'] .display-flex {
+div[data-value='Individual Risk'] .display-flex {
   flex-wrap: wrap;
 }
 
-div[data-value='Individual Calculation'] .display-flex > * {
+div[data-value='Individual Risk'] .display-flex > * {
   flex-basis: 32%;
 }
 
 @media only screen and (max-width: 850px) {
-  div[data-value='Individual Calculation'] .display-flex > * {
+  div[data-value='Individual Risk'] .display-flex > * {
     flex-basis: 50%;
   }
 }
 
 @media only screen and (max-width: 450px) {
-  div[data-value='Individual Calculation'] .display-flex > * {
+  div[data-value='Individual Risk'] .display-flex > * {
     flex-basis: 100%;
   }
 }
@@ -186,7 +186,7 @@ div.title img.logo + span {
 
 div.block.float {
   position: fixed;
-  bottom: 50px;
+  bottom: 60px;
   right: 20px;
   z-index: 10000;
 }

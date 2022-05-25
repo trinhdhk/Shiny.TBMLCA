@@ -29,7 +29,7 @@ server = function(input, output, session) {
       "cranial_nerve_palsy", "Does the patient have any other cranial nerve palsy (expect for the focal neurological deficit)?",
       "gcs", "Glasgow Coma Score",
       "illness_day", "Days from first symptoms (days)",
-      'xray_pul_tb', 'Pulmonary non-miliary TB (excluding Miliary TB)',
+      'xray_pul_tb', 'Pulmonary non-miliary TB',
       'xray_mil_tb', 'Miliary TB',
       'csf_wbc', 'CSF White cell count (cells/μL)',
       'csf_lym', 'CSF Lymphocyte count (cells/μL)',
