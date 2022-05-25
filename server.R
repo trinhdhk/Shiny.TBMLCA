@@ -195,16 +195,15 @@ server = function(input, output, session) {
           # browser()
           if (length(.last_val$scenario)) updateF7SmartSelect(inputId = 'scenario', selected = .last_val$scenario)
           if (identical(data,.last_val$data) & (identical(input$scenario, .last_val$scenario) | is.null(input$submit2))) return()
-          print(identical(data,.last_val$data))
-          print(identical(input$scenario, .last_val$scenario))
-          print('---')
           .last_val$data = data
           .last_val$scenario = input$scenario
          
           
           X = misc$create_model_matrix(misc$rescale_data(data, params$scales))
+          print(X)
+          print(apply(params$a, 2, mean))
           
-          bvars = c(3,4,5,6,7,8) + 9 + 1 #nXc=9, intercept=1
+          bvars = c(3,4,5,6,7,8) + 10 + 1 #nXd=10, intercept=1
           
           ztheta = params$a %*% t(X)
           theta = plogis(ztheta)

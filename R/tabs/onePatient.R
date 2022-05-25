@@ -50,7 +50,7 @@ onePatientTab <- f7Tab(
     f7Block(
       f7BlockTitle('X-Ray Signs'),
       shiny.fluent::Toggle.shinyInput(inputId = 'xray_pul_tb',
-                                      label = 'Pulmonary non-miliary TB (excluding Miliary TB)'),
+                                      label = 'Pulmonary non-miliary TB'),
       shiny.fluent::Toggle.shinyInput(inputId = 'xray_mil_tb',
                                       label = 'Miliary TB'),
       div('Additional signs and symptoms', class = c("block-title", "medium"), style="margin-left:0"),

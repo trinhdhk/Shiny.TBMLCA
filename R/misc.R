@@ -113,7 +113,7 @@ create_recipe =
 
 rescale_data = function(dt, scale_Xc){
   dt$illness_day = (log2(dt$illness_day) - scale_Xc$id$`scaled:center`) / scale_Xc$id$`scaled:scale` 
-  dt$gcs = (12-dt$gcs - scale_Xc$gcs$`scaled:center`) / scale_Xc$gcs$`scaled:scale` 
+  dt$gcs = (15-dt$gcs - scale_Xc$gcs$`scaled:center`) / scale_Xc$gcs$`scaled:scale` 
   dt$csf_glu = (log2(dt$csf_glu+.1) - scale_Xc$csfglu$`scaled:center`) / scale_Xc$csfglu$`scaled:scale` 
   dt$bld_glu = (log2(dt$bld_glu) - scale_Xc$glu$`scaled:center`) / scale_Xc$glu$`scaled:scale` 
   dt$csf_rbc = (log10(dt$csf_rbc+1) - scale_Xc$csfred$`scaled:center`) / scale_Xc$csfred$`scaled:scale` 
@@ -122,6 +122,7 @@ rescale_data = function(dt, scale_Xc){
   dt$csf_eos = (log10(dt$csf_eos+1) - scale_Xc$csfeos$`scaled:center`) / scale_Xc$csfeos$`scaled:scale` 
   dt$csf_pro = (log2(dt$csf_pro) - scale_Xc$csfpro$`scaled:center`) / scale_Xc$csfpro$`scaled:scale` 
   dt$csf_lac = (log2(dt$csf_lac) - scale_Xc$csflac$`scaled:center`) / scale_Xc$csflac$`scaled:scale` 
+  dt$csfeos_pos = dt$csf_eos > 0
   
   dt
 }
@@ -129,7 +130,7 @@ rescale_data = function(dt, scale_Xc){
 create_model_matrix = function(dt){
   with(dt,
        cbind(1, hiv, tb_symptoms, focal_neuro_deficit, cranial_nerve_palsy, contact_tb,
-             xray_pul_tb, xray_mil_tb, cryptococ, gram,
+             xray_pul_tb, xray_mil_tb, cryptococ, gram, csfeos_pos,
              illness_day, bld_glu, csf_glu, csf_wbc, csf_lym, csf_pro, csf_lac,
              gcs, csf_eos, csf_rbc, csf_wbc^2))
 }
