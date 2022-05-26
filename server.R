@@ -200,8 +200,8 @@ server = function(input, output, session) {
          
           
           X = misc$create_model_matrix(misc$rescale_data(data, params$scales))
-          print(X)
-          print(apply(params$a, 2, mean))
+          # print(X)
+          # print(apply(params$a, 2, mean))
           
           bvars = c(3,4,5,6,7,8) + 10 + 1 #nXd=10, intercept=1
           
@@ -251,7 +251,7 @@ server = function(input, output, session) {
             q <- round(c(q, mean(theta)), digits=4)
             l <- format(round((q),digits=4), scientific=FALSE,  drop0trailing=TRUE)
             # qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)
-            bayesplot::mcmc_areas(theta, prob = .95, prob_outer = .995,  point_est = 'mean') + 
+            bayesplot::mcmc_areas(theta, prob = .95, prob_outer = .995,  point_est = 'mean', adjust = 2) + 
               scale_x_continuous(breaks=q, label=l) + 
               theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
           })
@@ -269,7 +269,7 @@ server = function(input, output, session) {
             q <- quantile(bacillary, c(.005, .25, .75, .975))
             q <- round(c(q, mean(bacillary)), digits=2)
             l <- format(round((q),digits=2), scientific=FALSE,  drop0trailing=TRUE)
-            bayesplot::mcmc_areas(bacillary, prob=.95,  prob_outer = 1, point_est = 'mean') +
+            bayesplot::mcmc_areas(bacillary, prob=.95,  prob_outer = 1, point_est = 'mean', adjust = 2) +
               scale_x_continuous(breaks=q, label=l) 
             # theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
           }
@@ -284,7 +284,7 @@ server = function(input, output, session) {
             q <- round(c(q, mean(p_Smear)), digits=4)
             l <- format(round((q),digits=4), scientific=FALSE,  drop0trailing=TRUE)
             # qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)
-            bayesplot::mcmc_areas(p_Smear, prob = .95, prob_outer = .995,  point_est = 'mean') + 
+            bayesplot::mcmc_areas(p_Smear, prob = .95, prob_outer = .995,  point_est = 'mean', adjust = 2) + 
               scale_x_continuous(breaks=q, label=l)+ 
               theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
           })
@@ -294,7 +294,7 @@ server = function(input, output, session) {
             q <- round(c(q, mean(p_Mgit)), digits=4)
             l <- format(round((q),digits=4), scientific=FALSE,  drop0trailing=TRUE)
             # qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)
-            bayesplot::mcmc_areas(p_Mgit, prob = .95, prob_outer = .995,  point_est = 'mean') + 
+            bayesplot::mcmc_areas(p_Mgit, prob = .95, prob_outer = .995,  point_est = 'mean', adjust = 2) + 
               scale_x_continuous(breaks=q, label=l)+ 
               theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
           })
@@ -304,7 +304,7 @@ server = function(input, output, session) {
             q <- round(c(q, mean(p_Xpert)), digits=3)
             l <- format(round(plogis(q),digits=3), scientific=FALSE,  drop0trailing=TRUE)
             # qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)
-            bayesplot::mcmc_areas(p_Xpert, prob = .95, prob_outer = .995,  point_est = 'mean') + 
+            bayesplot::mcmc_areas(p_Xpert, prob = .95, prob_outer = .995,  point_est = 'mean', adjust = 2) + 
               scale_x_continuous(breaks=q, label=l)+ 
               theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
           })
@@ -414,7 +414,7 @@ server = function(input, output, session) {
           q <- round(c(q, mean(theta)), digits=4)
           l <- format(round((q),digits=4), scientific=FALSE,  drop0trailing=TRUE)
           # qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)
-          bayesplot::mcmc_areas(theta, prob = .95, prob_outer = .995,  point_est = 'mean') + 
+          bayesplot::mcmc_areas(theta, prob = .95, prob_outer = .995,  point_est = 'mean', adjust = 2) + 
             scale_x_continuous(breaks=q, label=l) + 
             theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
         })
@@ -490,4 +490,5 @@ server = function(input, output, session) {
     )
   })
   
+  waiter::waiter_hide()
 }
