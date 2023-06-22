@@ -1,0 +1,52 @@
+{
+  "id": {
+    "dim": [660, 1],
+    "scaled:center": [2.8684],
+    "scaled:scale": [1.28]
+  },
+  "glu": {
+    "dim": [660, 1],
+    "scaled:center": [2.7344],
+    "scaled:scale": [0.4266]
+  },
+  "csfglu": {
+    "dim": [660, 1],
+    "scaled:center": [1.4235],
+    "scaled:scale": [1.2046]
+  },
+  "csflym": {
+    "dim": [660, 1],
+    "scaled:center": [1.7683],
+    "scaled:scale": [0.8648]
+  },
+  "csfpro": {
+    "dim": [660, 1],
+    "scaled:center": [0.0119],
+    "scaled:scale": [1.494]
+  },
+  "csflac": {
+    "dim": [660, 1],
+    "scaled:center": [2.0075],
+    "scaled:scale": [0.9727]
+  },
+  "csfwbc": {
+    "dim": [660, 1],
+    "scaled:center": [2.0526],
+    "scaled:scale": [1.0659]
+  },
+  "gcs": {
+    "dim": [660, 1],
+    "scaled:center": [3],
+    "scaled:scale": [3]
+  },
+  "csfeos": {
+    "dim": [660, 1],
+    "scaled:center": [1.6469],
+    "scaled:scale": [0.8482]
+  },
+  "csfred": {
+    "dim": [660, 1],
+    "scaled:center": [1.4542],
+    "scaled:scale": [1.3588]
+  }
+}

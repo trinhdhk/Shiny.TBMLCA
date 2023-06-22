@@ -2,7 +2,10 @@ $(document).on('shiny:sessioninitialized', (event) => {
   if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
     $("html").addClass("theme-dark");
     Shiny.setInputValue('color_scheme', 'dark');
-  } else Shiny.setInputValue('color_scheme', 'light');
+  } else {
+    $("html").removeClass("theme-dark");
+    Shiny.setInputValue('color_scheme', 'light');
+  }
   window.matchMedia("(prefers-color-scheme: dark)")
     .addEventListener("change", e => {
       const newColorScheme = e.matches ? "dark" : "light";
@@ -15,6 +18,7 @@ $(document).on('shiny:sessioninitialized', (event) => {
 });
 
 $(document).ready(()=> {
+  
   $('.tab-link').click(function(){
     tab = $(this)[0]
     if (tab.classList.contains('tab-link-active') && tab.dataset.tab.includes('Diagnosis')){
@@ -23,4 +27,3 @@ $(document).ready(()=> {
   });
 })
               
-

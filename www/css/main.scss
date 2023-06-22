@@ -1,5 +1,6 @@
 *{
-  transition: all 0.1s;
+  transition: all 0.2s;
+  font-family: 'Source Sans Pro', sans-serif;
 }
 .item-inner{
   .item-title{
@@ -9,27 +10,54 @@
     }
   }
 }
+
+
+.accordion-item-content *{
+  color: #000;
+  
+  .theme-dark & {
+    color: inherit;
+  }
+}
+
+#submit{
+  display: none;
+  width: 0; height: 0; overflow: hidden;
+}
+  
 .block-title{
   font-weight: bold;
 }
-div[data-value='Information']{
+div[data-value='individualRisk']{
   .display-flex {
   flex-wrap: wrap;
   
-  & > * {
-    flex-basis: 30%;
+   & > * {
+    flex-basis: 32%;
+    @media only screen and (max-width:850px){
+       flex-basis: 50%;
+    }
+    @media only screen and (max-width:450px){
+       flex-basis: 100%;
+    }
   }
+    
 }
 }
 
 div[data-value='Diagnosis']{
   .display-flex {
-  flex-wrap: wrap;
-  
-  & > * {
-    flex-basis: 50%;
+    flex-wrap: wrap;
+    
+    & > * {
+      flex-basis: 50%;
+    }
   }
-}
+  
+ .click-through {
+    position: absolute;
+    pointer-events: none;
+  }
 }
 
 .toast.toast-center.toast-with-icon.modal-in{
@@ -40,6 +68,13 @@ div[data-value='Diagnosis']{
 }
 
 input[type='text']{
+  
+    .ms-TextField &{
+      height: 100%;
+      padding-left: 5px;
+      padding-right:0;
+      
+     }
     padding: 10px 20px 10px 10px;
     border-width: 0 0 1px 0;
     border-bottom-color: var(--f7-theme-color);
@@ -54,6 +89,13 @@ input[type='text']{
     } 
   
 }
+
+.help-button{
+    background-color: var(--f7-actions-bg-color);
+    &:hover{
+      background-color: var(--f7-dialog-button-text-color);
+    }
+  }
   
 .theme-dark{
   .ms-Toggle-background{
@@ -71,6 +113,9 @@ input[type='text']{
       color: var(--f7-block-title-text-color);
     }
     input[type='text']{
+      height: 100%;
+      padding-left: 5px;
+      padding-right:0;
       background-color: #000;
       &[data-warn='1']{
         background-color: #FCD12A;
@@ -118,3 +163,57 @@ input[type='text']{
     }
   }
 }
+
+div.title{
+  img.logo{
+    height: 60px;
+    width: auto;
+    float: left;
+    transition: all .5s;
+    
+    @media only screen and (max-width: 450px){
+      height:120px;
+    }
+    
+    & + span{
+      top: 20px;
+      position: relative;
+      font-weight: 800;
+      
+      @media only screen and (max-width: 450px){
+        display: none;
+      }
+    }
+  }
+}
+
+div.block.float{
+  position: fixed;
+  bottom: 60px;
+  right: 20px;
+  z-index: 10000;
+  
+  button {
+    padding: 20px 40px 20px 40px;
+    font-weight: 800;
+  }
+}
+
+#scenario_options {
+  #scenario-instructions {
+    width: calc(100% - 500px); 
+    padding: 30px 10px 10px 30px;
+    @media only screen and (max-width: 450px) {
+      flex-basis: 100%;
+    }
+    
+  }}
+  
+  #scenario-options {
+    wdith: 400px;
+    
+    @media only screen and (max-width: 450px) {
+      flex-basis: 100%;
+    }
+  }
+

@@ -1,0 +1,18 @@
+{
+  "background_color": "#000000",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "TBM-LCA Diagnosis App",
+  "orientation": "any",
+  "scope": "TBMLCA/",
+  "short_name": "TBM-LCA Dx",
+  "start_url": "/TBMLCA/",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "assets/hex.svg",
+      "type": "image/x-icon",
+      "sizes": "any"
+    }
+  ]
+}

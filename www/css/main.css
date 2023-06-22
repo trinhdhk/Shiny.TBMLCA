@@ -1,0 +1,218 @@
+* {
+  transition: all 0.1s;
+  font-family: 'Source Sans Pro', sans-serif;
+}
+
+.item-inner .item-title {
+  color: #000;
+}
+
+.theme-dark .item-inner .item-title {
+  color: inherit;
+}
+
+.accordion-item-content * {
+  color: #000;
+}
+
+.theme-dark .accordion-item-content * {
+  color: inherit;
+}
+
+#submit {
+  display: none;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.block-title {
+  font-weight: bold;
+}
+
+div[data-value='Individual Risk'] .display-flex {
+  flex-wrap: wrap;
+}
+
+div[data-value='Individual Risk'] .display-flex > * {
+  flex-basis: 32%;
+}
+
+@media only screen and (max-width: 850px) {
+  div[data-value='Individual Risk'] .display-flex > * {
+    flex-basis: 50%;
+  }
+}
+
+@media only screen and (max-width: 450px) {
+  div[data-value='Individual Risk'] .display-flex > * {
+    flex-basis: 100%;
+  }
+}
+
+div[data-value='Diagnosis'] .display-flex {
+  flex-wrap: wrap;
+}
+
+div[data-value='Diagnosis'] .display-flex > * {
+  flex-basis: 50%;
+}
+
+.toast.toast-center.toast-with-icon.modal-in {
+  min-width: 300px;
+}
+
+.toast-button.button {
+  size: 9px;
+}
+
+input[type='text'] {
+  padding: 10px 20px 10px 10px;
+  border-width: 0 0 1px 0;
+  border-bottom-color: var(--f7-theme-color);
+}
+
+.ms-TextField input[type='text'] {
+  height: 100%;
+  padding-left: 5px;
+  padding-right: 0;
+}
+
+input[type='text'][data-warn='1'] {
+  background-color: #FCD12A;
+  color: #000;
+}
+
+input[type='text'][data-warn='2'] {
+  background-color: #840C24;
+  color: #fff;
+}
+
+.theme-dark .ms-Toggle-background {
+  background-color: #000;
+  border-color: #a8a8a8;
+}
+
+.theme-dark .ms-Toggle-background:hover .ms-Toggle-thumb {
+  background-color: #666564;
+}
+
+.theme-dark .ms-Label {
+  color: var(--f7-block-title-text-color);
+}
+
+.theme-dark .ms-TextField label {
+  color: var(--f7-block-title-text-color);
+}
+
+.theme-dark .ms-TextField input[type='text'] {
+  height: 100%;
+  padding-left: 5px;
+  padding-right: 0;
+  background-color: #000;
+}
+
+.theme-dark .ms-TextField input[type='text'][data-warn='1'] {
+  background-color: #FCD12A;
+  color: #000;
+}
+
+.theme-dark .ms-TextField input[type='text'][data-warn='2'] {
+  background-color: #840C24;
+  color: #fff;
+}
+
+.theme-dark .ms-TextField input[type='text'] ::placeholder {
+  color: var(--f7-color-gray);
+}
+
+.theme-dark .swal2-popup {
+  background-color: #171717;
+  transform: scale(0.7);
+}
+
+.theme-dark .swal2-popup .swal2-content, .theme-dark .swal2-popup .swal2-title {
+  color: var(--f7-block-title-text-color);
+}
+
+@media only screen and (min-width: 700px) {
+  .tabs-animated-wrap {
+    overflow-y: auto;
+    position: relative;
+    width: calc(100% - 40px);
+    height: calc(100% - 40px - var(--f7-navbar-height));
+    top: var(--f7-navbar-height);
+    margin: 20px;
+    background-color: var(--f7-page-bg-color);
+    box-shadow: #afafaf 0px 0px 10px 0px;
+    border-radius: 5px;
+  }
+  .theme-dark .tabs-animated-wrap {
+    background-color: #1E1E1E;
+    box-shadow: #050505 0px 0px 10px 0px;
+  }
+  .page {
+    background-color: #EFEFEF;
+  }
+  .theme-dark .page {
+    background-color: var(--f7-page-bg-color);
+  }
+}
+
+div.title img.logo {
+  height: 60px;
+  width: auto;
+  float: left;
+  transition: all .5s;
+}
+
+@media only screen and (max-width: 450px) {
+  div.title img.logo {
+    height: 120px;
+  }
+}
+
+div.title img.logo + span {
+  top: 20px;
+  position: relative;
+  font-weight: 800;
+}
+
+@media only screen and (max-width: 450px) {
+  div.title img.logo + span {
+    display: none;
+  }
+}
+
+div.block.float {
+  position: fixed;
+  bottom: 60px;
+  right: 20px;
+  z-index: 10000;
+}
+
+div.block.float button {
+  padding: 20px 40px 20px 40px;
+  font-weight: 800;
+}
+
+#scenario_options #scenario-instructions {
+  width: calc(100% - 500px);
+  padding: 30px 10px 10px 30px;
+}
+
+@media only screen and (max-width: 450px) {
+  #scenario_options #scenario-instructions {
+    flex-basis: 100%;
+  }
+}
+
+#scenario-options {
+  wdith: 400px;
+}
+
+@media only screen and (max-width: 450px) {
+  #scenario-options {
+    flex-basis: 100%;
+  }
+}
