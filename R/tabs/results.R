@@ -1,5 +1,6 @@
 resultTab <- f7Tab(
   tabName = "Diagnosis",
+  title = "Diagnosis",
   hidden = TRUE,
   # icon = f7Icon("graph_circle"),
   icon = emo::ji('chart increasing'),
@@ -34,21 +35,33 @@ resultTab <- f7Tab(
   f7Card(
     title = "Risk of TBM",
     
-    uiOutput('theta_text'),
-    shinycssloaders::withSpinner(plotOutput('theta_areasPlot'))
+    shinycssloaders::withSpinner(uiOutput('theta_text'), type=7, size=.2, hide.ui=FALSE),
+    f7Accordion(
+      f7AccordionItem(
+        title = '',
+        shinycssloaders::withSpinner(plotOutput('theta_areasPlot'))
+      )
+    )
   ),
   
   
   f7Card(
     title = "Average Bacillary Burden (given TBM Positive)",
-    uiOutput('re_text'),
-    shinycssloaders::withSpinner(plotOutput('re_areasPlot'))
+    shinycssloaders::withSpinner(uiOutput('re_text'), type=7, size=.2, hide.ui = FALSE),
+    f7Accordion(
+      f7AccordionItem(
+        title = '',
+        shinycssloaders::withSpinner(plotOutput('re_areasPlot'))
+      )
+    )
   ),
   
   
   f7Block(
-    f7BlockHeader('Proability of positive confirmation tests'),
+    f7BlockHeader('Probability of positive confirmation tests'),
     uiOutput('test_text'),
+    
+    div(style='display:block; clear:both; height: 50px'),
     f7Accordion(
       id = 'test_plots',
       multiCollapse = TRUE,

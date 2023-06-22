@@ -1,6 +1,7 @@
 infoTab <-
   f7Tab(
     tabName = "Info",
+    title = 'Info',
     # icon = f7Icon("info_circle"),
     icon = emo::ji('information'),
     active = FALSE,

@@ -1,5 +1,5 @@
 *{
-  transition: all 0.1s;
+  transition: all 0.2s;
   font-family: 'Source Sans Pro', sans-serif;
 }
 .item-inner{
@@ -28,7 +28,7 @@
 .block-title{
   font-weight: bold;
 }
-div[data-value='Individual Risk']{
+div[data-value='individualRisk']{
   .display-flex {
   flex-wrap: wrap;
   
@@ -47,12 +47,17 @@ div[data-value='Individual Risk']{
 
 div[data-value='Diagnosis']{
   .display-flex {
-  flex-wrap: wrap;
-  
-  & > * {
-    flex-basis: 50%;
+    flex-wrap: wrap;
+    
+    & > * {
+      flex-basis: 50%;
+    }
   }
-}
+  
+ .click-through {
+    position: absolute;
+    pointer-events: none;
+  }
 }
 
 .toast.toast-center.toast-with-icon.modal-in{
@@ -84,6 +89,13 @@ input[type='text']{
     } 
   
 }
+
+.help-button{
+    background-color: var(--f7-actions-bg-color);
+    &:hover{
+      background-color: var(--f7-dialog-button-text-color);
+    }
+  }
   
 .theme-dark{
   .ms-Toggle-background{

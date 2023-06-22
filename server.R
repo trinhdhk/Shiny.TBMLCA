@@ -4,16 +4,22 @@ library(thematic)
 ggplot2::theme_set(ggplot2::theme_bw())
 thematic_shiny()
 
-plot_text <- function(x, fn=\(x) x, of){
-  mean = mean(fn(x))
-  lower.ci = quantile(fn(x),.025)
-  upper.ci = quantile(fn(x),.975)
+plot_text <- function(x, fn=\(x) x, of, ci=FALSE, pct = FALSE){
+  factor = if (pct) 100 else 1
+  digits = if (pct) 3 else 1
+  unit = if (pct) '%' else ''
+  mean = mean(fn(x)) * factor
+  lower.ci = quantile(fn(x),.025) * factor
+  upper.ci = quantile(fn(x),.975) * factor
+  ci_text = if (ci) glue::glue(
+    ', with 90% Credible Interval is [{strong(format(lower.ci, digits=digits))}, {strong(format(upper.ci, digits=digits))}] {unit}
+    '
+  ) else ''
   renderUI(
-    HTML(glue::glue('
-          Expected {of} (coloured vertical line) is: 
-          {strong(format(mean,digits=3))},
-          with 95% Credible Interval (solid area) is 
-          [{strong(format(lower.ci, digits=3))}, {strong(format(upper.ci, digits=3))}]')
+    span(HTML(glue::glue('
+          Expected {of} is: 
+          {strong(format(mean,digits=digits))} {unit} {ci_text}.')),
+         class='click-through'
     ))
 }
 
@@ -93,6 +99,9 @@ server = function(input, output, session) {
   # params <- reactiveVal()
   predicts <- reactiveValues()
   .last_val <- reactiveValues()
+  .last_val$impute=0
+  .last_val$impute2=0
+  .last_val$scenario = '0'
   observeEvent(input$submit_home, {
     shinyMobile::updateF7Tabs('mainTabs', selected = 'Diagnosis', session=session)
     shinyjs::js$submit()
@@ -104,11 +113,14 @@ server = function(input, output, session) {
     # browser()
     # .last_val$scenario <- input$scenario
    
+    # .last_val$impute <- NULL
+    # shinyjs::js$setInput('missingConfirm', NULL)
     `%|%` <- \(L, R) if (isTRUE(is.null(L) || is.na(L))) R else L
     # browser()
     data = misc$create_data(input, session)
     if (!is.data.frame(data)) return(1)
    
+    
     mode = list(misc$create_recipe(data, input, session), nrow(data) == 1)
     # browser()
     if (mode[[2]] == 1) shinyjs::js$enableDiag() else shinyjs::js$disableDiag()
@@ -144,46 +156,102 @@ server = function(input, output, session) {
     if (mode[[1]] == 'full'){
       # browser()
       if (mode[[2]]==1) {
-        # print(data[1,])
+        # Legacy
+        
+        
         if (any(is.na(data[1,]))){
-          f7Dialog(
-            id = 'missing-var',
-            title = 'Missing essential features',
-            type = 'alert',
-            text = 'Some essential variables are missing.'
-          )
-          shinyjs::js$sendBackFirstTab()
-    
-        } else {
-          # browser()
+          if ((is.null(input$missingConfirm))){
+            f7Dialog(
+              id = 'missingConfirm',
+              title = 'Missing some laboratory features',
+              type = 'confirm',
+              text = 'Some laboratory variables are missing and going to be singly imputed. The imputation is a black-box XGBoost model based on our training dataset. Imputation might reduce the reliability of the model. This is a once-per-session caution. Do you want to continue?'
+            )
+            if (isFALSE(input$missingConfirm)) shinyjs::js$sendBackFirstTab()
+          } else if (!(input$missingConfirm)){
+            f7Dialog(
+              id = 'missing-var',
+              title = 'Missing essential features',
+              type = 'alert',
+              text = 'Some laboratoy variables are missing and you chose not to impute. Please refresh the session if you want to reverse your decision.'
+            )
+            shinyjs::js$sendBackFirstTab()
+          }
+        } 
+        
+        observeEvent(input$missingConfirm, {
+          # if (.last_val$impute != input$missingConfirm) {
+            .last_val$impute <-  input$missingConfirm
+          # }
+        })
+          
+          # (if (any(is.na(data[1,])) && if (!is.null(input$missingConfirm)) !input$missingConfirm else T) {
+          #   # .last_val$impute2 <- .last_val$impute
+          # 
+          # } else {
+        observeEvent(c(input$missingConfirm, data), if (!any(is.na(data[1,])) | if (!is.null(input$missingConfirm)) input$missingConfirm else F){
+          # .last_val$impute2 <- .last_val$impute
          
+          # browser()
+          if (length(.last_val$scenario)) updateF7SmartSelect(inputId = 'scenario', selected = .last_val$scenario)
+          if (identical(data,.last_val$data) & (identical(input$scenario, .last_val$scenario) | is.null(input$submit2))) return()
+          .last_val$data = data
+          if(!is.null(input$scenario)) .last_val$scenario = input$scenario
+         
+          
+          X = misc$create_model_matrix(misc$rescale_data(data, params$scales))
+          # browser()
+          missX = colnames(X)[is.na(X[1,])]
+          # print(missX)
+          if (any(is.na(X[1,]))){
+            # browser()
+            X2 = X[,c(-1,-ncol(X)),drop=F] |> as.data.frame()
+            colnames(X2) = paste0('V', 1:ncol(X2))
+            X3 = X2[, colnames(imp_model$imputed.data[[1]])]
+            X3 = rbind(0,X3)
+            X3 = mixgb::impute_new(imp_model, X3)[[1]][-1,]
+            X2[,colnames(imp_model$imputed.data[[1]])] = X3
+            X2 = cbind(X[,1], X2, X[, ncol(X)])
+            colnames(X2) = colnames(X)
+            X = X2
+            print(X)
+          }
+          
+          select_list <-   list(
+            "No test" = '0',
+            "Smear (-)" = 'a',
+            "Xpert (-)" = 'b',
+            "Smear (-) + MGIT (-)" = 'c',
+            "Smear (-) + Xpert (-)" = 'd',
+            "All tests (-)" = 'e'
+          )
+          
+          print(.last_val$scenario)
           output$scenario_options <- 
             renderUI(
               f7Flex(
-                f7Block(
+                  f7Block(
                   # div(
                   "You can select a scenario in which some confirmatory test results have been retrieved.",
                   "All probabilities of test positive are for future tests",
-                  id = 'scenario-instructions',
+                  
+                  if (length(missX)) glue::glue('<br>{missX} is imputed with standardised value = {X[1,missX]|>round(2)}') |> as.list() |> do.call(HTML, args=_),
+                  
+                  id = 'scenario-instructions'
                   # style = "width: calc(100% - 500px); padding: 30px 10px 10px 30px"
                   # ),
                 ),
                 
+        
                 
                 f7Block(
                   id = 'scenario-options',
                   f7SmartSelect(
                     inputId = 'scenario',
                     label = "Current scenario",
-                    selected = "No test",
-                    choices = list(
-                      "No test" = '0',
-                      "Smear (-)" = 'a',
-                      "Xpert (-)" = 'b',
-                      "Smear (-) + MGIT (-)" = 'c',
-                      "Smear (-) + Xpert (-)" = 'd',
-                      "All tests (-)" = 'e'
-                    ),
+                    # selected = names(select_list)[which(select_list==.last_val$scenario)],
+                    selected = .last_val$scenario,
+                    choices = select_list,
                     openIn='popover',
                     searchbar=FALSE
                   ),
@@ -192,19 +260,16 @@ server = function(input, output, session) {
                 )
               )
             )
+          
           # browser()
-          if (length(.last_val$scenario)) updateF7SmartSelect(inputId = 'scenario', selected = .last_val$scenario)
-          if (identical(data,.last_val$data) & (identical(input$scenario, .last_val$scenario) | is.null(input$submit2))) return()
-          .last_val$data = data
-          .last_val$scenario = input$scenario
-         
           
-          X = misc$create_model_matrix(misc$rescale_data(data, params$scales))
-          # print(X)
-          # print(apply(params$a, 2, mean))
+          # observeEvent(req(input$scenario), {
+          #   .last_input$scenario = input$scenario
+          # })
           
+                  
           bvars = c(3,4,5,6,7,8) + 10 + 1 #nXd=10, intercept=1
-          
+          # browser()
           ztheta = params$a %*% t(X)
           theta = plogis(ztheta)
           bacillary = 
@@ -217,9 +282,9 @@ server = function(input, output, session) {
             plogis(params$z[,'z_Xpert[1]', drop=FALSE])
           )
           tpr = cbind(
-            plogis(params$z[,'z_Smear[2]', drop=FALSE] + params$b[,'b_RE[1]'] * bacillary),
-            plogis(params$z[,'z_Mgit[2]',  drop=FALSE] + params$b[,'b_RE[2]'] * bacillary),
-            plogis(params$z[,'z_Xpert[2]', drop=FALSE] + params$b[,'b_RE[3]'] * bacillary)
+            plogis(params$z[,'z_Smear[2]', drop=FALSE] + params$b[,'b_RE[1]', drop=FALSE] * bacillary),
+            plogis(params$z[,'z_Mgit[2]',  drop=FALSE] + params$b[,'b_RE[2]', drop=FALSE] * bacillary),
+            plogis(params$z[,'z_Xpert[2]', drop=FALSE] + params$b[,'b_RE[3]', drop=FALSE] * bacillary)
           )
           scenarios = list(
             a = misc$test_prob(theta, fpr[,1, drop=FALSE], tpr[,1, drop=FALSE], neg=TRUE),
@@ -245,18 +310,23 @@ server = function(input, output, session) {
           predicts$theta = theta
           
           # Theta ----
-          output$theta_text = plot_text(theta, of = 'probability of TBM')
+          output$theta_text = plot_text(theta, of = 'probability of TBM', pct=T)
           output$theta_areasPlot = renderPlot({
-            q <- quantile(theta, c(.025, .25, .75, .975))
-            q <- round(c(q, mean(theta)), digits=4)
-            l <- format(round((q),digits=4), scientific=FALSE,  drop0trailing=TRUE)
+            q <- quantile(theta, c(.1, .25, .75, .9))
+            q <- round(c(q, mean(theta)), digits=2)
+            l <- format(round((q),digits=2), scientific=FALSE,  drop0trailing=TRUE)
             # qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)
-            bayesplot::mcmc_areas(theta, prob = .95, prob_outer = .995,  point_est = 'mean', adjust = 2) + 
+            bayesplot::mcmc_areas(theta, prob = .50, prob_outer = .90,  point_est = 'mean', adjust = 2) +
               scale_x_continuous(breaks=q, label=l) + 
               theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+            # ggplot() + stat_ecdf(aes(x=theta, xend=after_stat(ecdf))) + 
+            #   geom_segment(aes(y=mean(theta)), linewidth=1, color = )
+            #   geom_segment(aes(y=mean(theta), yend=mean(theta), x=1)) + 
+            #   bayesplot::theme_default()
+            
           })
           
-          colnames(bacillary) = "Bacillary Burden"
+          colnames(bacillary) = "Bacillary burden"
           predicts$bacillary = bacillary
           colnames(p_Smear) <- colnames(p_Mgit) <- colnames(p_Xpert) <- 'Probability'
           predicts$p_Smear = p_Smear
@@ -266,55 +336,68 @@ server = function(input, output, session) {
           # RE
           output$re_text = plot_text(bacillary, fn = c, of = 'average bacillary burden')
           output$re_areasPlot = renderPlot({
-            q <- quantile(bacillary, c(.005, .25, .75, .975))
+            q <- quantile(bacillary, c(.1, .25, .75, .9))
             q <- round(c(q, mean(bacillary)), digits=2)
             l <- format(round((q),digits=2), scientific=FALSE,  drop0trailing=TRUE)
-            bayesplot::mcmc_areas(bacillary, prob=.95,  prob_outer = 1, point_est = 'mean', adjust = 2) +
+            bayesplot::mcmc_areas(bacillary, prob=.5,  prob_outer = 1, point_est = 'mean', adjust = 2) +
               scale_x_continuous(breaks=q, label=l) 
             # theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
           }
             
           )
           
-          output$test_text = renderText("Below plots show estimates of each confimation test's possibility of positive.")
+          output$test_text = renderText("The plots below show estimates of each confimation test's possibility of positive.")
           # Tests
           output$smear_text = plot_text(p_Smear, of = 'probability of positive Smear')
           output$smear_areasPlot = renderPlot({
-            q <- quantile(p_Smear, c(.005, .025, .975, .995))
-            q <- round(c(q, mean(p_Smear)), digits=4)
-            l <- format(round((q),digits=4), scientific=FALSE,  drop0trailing=TRUE)
+            q <- quantile(p_Smear, c(.1, .025, .975, .9))
+            q <- round(c(q, mean(p_Smear)), digits=2)
+            l <- format(round((q),digits=2), scientific=FALSE,  drop0trailing=TRUE)
             # qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)
-            bayesplot::mcmc_areas(p_Smear, prob = .95, prob_outer = .995,  point_est = 'mean', adjust = 2) + 
+            bayesplot::mcmc_areas(p_Smear, prob = .5, prob_outer = .95,  point_est = 'mean', adjust = 2) + 
               scale_x_continuous(breaks=q, label=l)+ 
               theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
           })
           output$mgit_text = plot_text(p_Mgit, of = 'probability of positive Mgit')
           output$mgit_areasPlot = renderPlot({
-            q <- quantile(p_Mgit, c(.005, .025, .975, .995))
-            q <- round(c(q, mean(p_Mgit)), digits=4)
-            l <- format(round((q),digits=4), scientific=FALSE,  drop0trailing=TRUE)
+            q <- quantile(p_Mgit, c(.1, .25, .75, .9))
+            q <- round(c(q, mean(p_Mgit)), digits=2)
+            l <- format(round((q),digits=2), scientific=FALSE,  drop0trailing=TRUE)
             # qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)
-            bayesplot::mcmc_areas(p_Mgit, prob = .95, prob_outer = .995,  point_est = 'mean', adjust = 2) + 
+            bayesplot::mcmc_areas(p_Mgit, prob = .5, prob_outer = .95,  point_est = 'mean', adjust = 2) + 
               scale_x_continuous(breaks=q, label=l)+ 
               theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
           })
           output$xpert_text = plot_text(p_Xpert, of = 'probability of positive GeneXpert')
           output$xpert_areasPlot = renderPlot({
-            q <- quantile(p_Xpert, c(.005, .025, .25, .75, .975, .995))
-            q <- round(c(q, mean(p_Xpert)), digits=3)
-            l <- format(round(plogis(q),digits=3), scientific=FALSE,  drop0trailing=TRUE)
+            q <- quantile(p_Xpert, c(.1, .25, .75, .9))
+            q <- round(c(q, mean(p_Xpert)), digits=2)
+            l <- format(round(plogis(q),digits=2), scientific=FALSE,  drop0trailing=TRUE)
             # qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)
-            bayesplot::mcmc_areas(p_Xpert, prob = .95, prob_outer = .995,  point_est = 'mean', adjust = 2) + 
+            bayesplot::mcmc_areas(p_Xpert, prob = .5, prob_outer = .95,  point_est = 'mean', adjust = 2) + 
               scale_x_continuous(breaks=q, label=l)+ 
               theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
           })
           
-        } 
+        }) 
       } else {
 
         
         # browser()
         X = misc$create_model_matrix(misc$rescale_data(data, params$scales))
+        if (any(is.na(X[1,]))){
+          # browser()
+          X2 = X[,c(-1,-ncol(X)),drop=F] |> as.data.frame()
+          colnames(X2) = paste0('V', 1:ncol(X2))
+          X3 = X2[, colnames(imp_model$imputed.data[[1]])]
+          X3 = rbind(0,X3)
+          X3 = mixgb::impute_new(imp_model, X3)[[1]][-1,]
+          X2[,colnames(imp_model$imputed.data[[1]])] = X3
+          X2 = cbind(X[,1], X2, X[, ncol(X)])
+          colnames(X2) = colnames(X)
+          X = X2
+          print(X)
+        }
         bvars = c(3,4,5,6,7,8) + 9 + 1 #nXc=9, intercept=1
         ztheta = params$a %*% t(X)
         theta = plogis(ztheta)
@@ -351,10 +434,10 @@ server = function(input, output, session) {
         sample_summary =
           sapply(sample_array, function(arr) {
             data.frame(
-              mean = apply(arr, 2, mean),
-              median = apply(arr, 2, quantile, .5),
-              lower.ci=apply(arr,2,quantile, .25),
-              upper.ci=apply(arr,2,quantile, .25)
+              mean = apply(arr, 2, mean, na.rm=T),
+              median = apply(arr, 2, quantile, .5, na.rm=T),
+              lower.ci=apply(arr,2,quantile, .025, na.rm=T),
+              upper.ci=apply(arr,2,quantile, .975, na.rm=T)
               )
           }, simplify = FALSE)
         output$sample_array = downloadHandler(
@@ -408,13 +491,13 @@ server = function(input, output, session) {
         colnames(theta) = "Probability"
         
         # Theta ----
-        output$theta_text = plot_text(theta, of = 'probability of TBM')
+        output$theta_text = plot_text(theta, of = 'probability of TBM', pct=T)
         output$theta_areasPlot = renderPlot({
-          q <- quantile(theta, c(.025, .25, .75, .975))
-          q <- round(c(q, mean(theta)), digits=4)
-          l <- format(round((q),digits=4), scientific=FALSE,  drop0trailing=TRUE)
+          q <- quantile(theta, c(.1, .25, .75, .9))
+          q <- round(c(q, mean(theta)), digits=2)
+          l <- format(round((q),digits=2), scientific=FALSE,  drop0trailing=TRUE)
           # qlogis(c(.0001,.001,.01, seq(.1,.9,.2),.99)
-          bayesplot::mcmc_areas(theta, prob = .95, prob_outer = .995,  point_est = 'mean', adjust = 2) + 
+          bayesplot::mcmc_areas(theta, prob = .5, prob_outer = .95,  point_est = 'mean', adjust = 2) + 
             scale_x_continuous(breaks=q, label=l) + 
             theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
         })
@@ -442,10 +525,10 @@ server = function(input, output, session) {
         sample_summary =
           sapply(sample_array, function(arr) {
             data.frame(
-              mean = apply(arr, 2, mean),
-              median = apply(arr, 2, quantile, .5),
-              lower.ci=apply(arr,2,quantile, .25),
-              upper.ci=apply(arr,2,quantile, .25)
+              mean = apply(arr, 2, mean, na.rm=T),
+              median = apply(arr, 2, quantile, .5, na.rm=T),
+              lower.ci=apply(arr,2,quantile, .025, na.rm=T),
+              upper.ci=apply(arr,2,quantile, .975, na.rm=T)
             )
           }, simplify = FALSE)
         output$sample_array = downloadHandler(
@@ -480,6 +563,8 @@ server = function(input, output, session) {
         )
       }
     }
+    
+  
   })
   
   # send the theme to javascript

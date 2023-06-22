@@ -2,18 +2,18 @@ fluentNumericInput = function(inputId, ..., warn.validator = NULL){
   tagList(
     shiny.fluent::TextField.shinyInput(inputId = inputId,
                                        ...),
-    tags$script(paste0("$('input#",inputId,"').on('change paste keyup', function(){
+    tags$script(paste0("$(document).on('change paste keyup','input#",inputId,"', function(){
         if (!/^\\.?\\d*\\.?\\d*$/.test($(this).val())){
           newstring = $(this).val().slice(0,-1);
           $(this).val(newstring);
         }
-      });")),
+      });"), defer = NA),
     
     if (length(warn.validator)) {
       tags$script(
         HTML(glue::glue(
           "
-          $('input#[inputId]').on('change paste keyup', function(){
+          $(document).on('change paste keyup', 'input#[inputId]', function(){
             validator = [warn.validator];
             status = validator($(this).val());
             if (status == 0 || !$(this).val()) {
@@ -21,7 +21,7 @@ fluentNumericInput = function(inputId, ..., warn.validator = NULL){
             }
             if (status == 1) $(this).attr('data-warn', '1');
             if (status == 2) $(this).attr('data-warn', '2');
-          }).focusout(function(){
+          }).on('focusout','input#[inputId]', function(){
             if ($(this).attr('data-warn') === '2'){
                Shiny.setInputValue('errInput', {
                 inputId : '[inputId]',
@@ -82,7 +82,7 @@ create_data =
     if (length(input$custom_data)) {
       dt = read.csv(req(input$custom_data$datapath), check.names = FALSE)
       # browser()
-      if (all.equal(names(dt), names(template_dt))[[1]] != TRUE) {
+      if (length(setdiff(names(template_dt), names(dt)))) {
         f7Dialog(id = "invalid-file", 
                  title = "Invalid file",
                  text = "This file is not following the template. Please re-check!")
@@ -102,7 +102,7 @@ create_data =
 create_recipe = 
   function(dt, input, session){
     if (any(is.na(dt[1,ess_var]))) { model = ''}
-    else if (any(is.na(dt[1,names(template_dt)]))){
+    else if (sum(is.na(dt[1,names(template_dt)])) > 3){ #arbitrary number, not imputing if number of missing full feature > 3
       # if (any(is.na(dt[1,add_var]))) model = ''
       # else 
       model = 'simplified'

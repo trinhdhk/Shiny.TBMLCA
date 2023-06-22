@@ -1,5 +1,6 @@
 onePatientTab <- f7Tab(
-  tabName = 'Individual Risk',
+  tabName = 'individualRisk',
+  title = 'Inidivdual risk',
   # icon = f7Icon('person_crop_circle'),
   icon = span(emo::ji('bust_in_silhouette'), class = 'my-icon'),
   active = TRUE,
