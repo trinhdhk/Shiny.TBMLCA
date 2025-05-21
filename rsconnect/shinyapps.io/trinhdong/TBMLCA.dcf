@@ -1,0 +1,12 @@
+name: TBMLCA
+title: TBMLCA
+username: trinhdong
+account: trinhdong
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5505468
+bundleId: 10316802
+url: https://trinhdong.shinyapps.io/TBMLCA/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

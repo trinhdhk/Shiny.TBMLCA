@@ -2,7 +2,7 @@ onePatientTab <- f7Tab(
   tabName = 'individualRisk',
   title = 'Inidivdual risk',
   # icon = f7Icon('person_crop_circle'),
-  icon = span(emo::ji('bust_in_silhouette'), class = 'my-icon'),
+  icon = span(emoji::emoji('bust_in_silhouette'), class = 'my-icon'),
   active = TRUE,
   # p("This application helps you estimate individual risk of TBM, given a set of clinical and laboratory information.", 
   #   style = 'padding-left: 20px'),

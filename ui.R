@@ -49,7 +49,7 @@ fluentNumericInput = function(inputId, ..., warn.validator = NULL){
 
 ui <- f7Page(
   title = "TBM-LCA Dx App",
-  options = list(dark = TRUE, iosTranslucentBars = TRUE),
+  options = list(dark = 'auto', iosTranslucentBars = TRUE),
   waiter::useWaiter(),
   waiter::waiterShowOnLoad(
     html = tagList(img(src='assets/hex.svg', width='200px', style="margin-bottom:20px"), br(), waiter::spin_3()),

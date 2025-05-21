@@ -3,7 +3,7 @@ resultTab <- f7Tab(
   title = "Diagnosis",
   hidden = TRUE,
   # icon = f7Icon("graph_circle"),
-  icon = emo::ji('chart increasing'),
+  icon = emoji::emoji('chart increasing'),
   active = FALSE,
   tags$head(
     tags$style(sass::sass(sass::sass_file('www/css/main.scss'))),
